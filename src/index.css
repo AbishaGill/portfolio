@@ -1,0 +1,9 @@
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap");
+
+@import "tailwindcss";
+
+:root {
+  font-family: "Oswald";
+  background-color: black;
+  scroll-behavior: smooth;
+}
