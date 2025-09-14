@@ -27,3 +27,4 @@ const Marquee = () => {
 };
 
 export default Marquee;
+  

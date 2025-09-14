@@ -3,6 +3,7 @@ import Landing from "/src/assets/photos/landingPhoto.png";
 import ContactForm from "/src/assets/photos/contactform-reactjs.netlify.app_ (1).png";
 import ecommerce from "/src/assets/photos/e-commerce.png"
 import movie from "/src/assets/photos/movie app.png"
+import coffee from "/src/assets/photos/coffee.png"
 
 const Projects = () => {
   const projectData = [
@@ -34,6 +35,13 @@ const Projects = () => {
       description: "This movie website is a small React application that lists movies, lets users search and view movie details, and demonstrates modern front-end practices.",
       link: "https://moviee-app-reactjs.netlify.app/",
       imgSrc: movie,
+    },
+    {
+      id: "4",
+      title: "Coffee Website",
+      description: "Coffee Web React is a modern and responsive website built with React.js, designed for a coffee shop or café. It highlights a simple yet elegant layout with sections for the menu, coffee varieties, images, and contact information.",
+      link: "https://coffee-web-react.netlify.app/",
+      imgSrc: coffee,
     },
   ];
 
