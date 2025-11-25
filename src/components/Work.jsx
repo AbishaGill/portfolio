@@ -1,13 +1,61 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 const Work = () => {
+  // Animation Variants
+  const headingVariants = {
+    hidden: { opacity: 0, y: -30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -50 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+      },
+    },
+  };
+
   return (
     <section id="experience">
-      <h2 className="my-10 text-center text-3xl lg:text-8xl">
+      <motion.h2
+        className="my-10 text-center text-3xl lg:text-8xl"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        variants={headingVariants}
+      >
         Work Experience
-      </h2>
-      <div className="mx-auto max-w-6xl">
-        <div className="mx-4 m-20">
+      </motion.h2>
+      <motion.div
+        className="mx-auto max-w-6xl"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={containerVariants}
+      >
+        <motion.div className="mx-4 m-20" variants={itemVariants}>
           <h2 className="font-medium lg:text-2xl">Nexobe</h2>
           <div className="flex justify-between">
             <p className="py-4 tracking-wide lg:text-xl">
@@ -18,8 +66,8 @@ const Work = () => {
           <p className="font-sans text-gray-400">
             Nexobe, a US-based software engineering company specializing in SaaS product development. I develop and maintain tools using modern web technologies including Next.js, React.js, TypeScript, and Tailwind CSS. I actively collaborate with the design team to make informed UI decisions that enhance user experience and contribute to building reusable, high-performance front-end components that serve multiple projects across the organization. I collaborated closely with the web development team to ensure timely updates and maintain consistency across multiple company sites.
           </p>
-        </div>
-        <div className="mx-4 m-20">
+        </motion.div>
+        <motion.div className="mx-4 m-20" variants={itemVariants}>
           <h2 className="font-medium lg:text-2xl">GAOTek Inc</h2>
           <div className="flex justify-between">
             <p className="py-4 tracking-wide lg:text-xl">
@@ -30,8 +78,8 @@ const Work = () => {
           <p className="font-sans text-gray-400">
             Managed and updated WordPress websites for GAO Tek's digital platforms while assisting in designing web pages and optimizing site performance. I improved overall user experience through strategic layout and content adjustments, gaining hands-on experience with WordPress plugins, SEO tools, and content management systems. I collaborated closely with the web development team to ensure timely updates and maintain consistency across multiple company sites.
           </p>
-        </div>
-        <div className="mx-4 m-20">
+        </motion.div>
+        <motion.div className="mx-4 m-20" variants={itemVariants}>
           <h2 className="font-medium lg:text-2xl">Codantix Tech</h2>
           <div className="flex justify-between">
             <p className="py-4 tracking-wide lg:text-xl">
@@ -49,8 +97,8 @@ const Work = () => {
             creative ideas into functional solutions while working in a
             professional environment.
           </p>
-        </div>
-        <div className="mx-4 m-20">
+        </motion.div>
+        <motion.div className="mx-4 m-20" variants={itemVariants}>
           <h2 className="font-medium lg:text-2xl">
             GitHub | React.js Projects
           </h2>
@@ -71,8 +119,8 @@ const Work = () => {
             improved my technical skills but also taught me how to work with
             developers around the world on real-world projects.
           </p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 };

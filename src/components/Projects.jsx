@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import Landing from "/src/assets/photos/landingPhoto.png";
 import ecommerce from "/src/assets/photos/e-commerce.png"
 import movie from "/src/assets/photos/movie app.png"
@@ -12,6 +13,81 @@ import Nova from "/src/assets/photos/nova.png"
 
 const Projects = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const headingVariants = {
+    hidden: { opacity: 0, y: -30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const buttonVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+      },
+    },
+    hover: {
+      scale: 1.05,
+      transition: {
+        duration: 0.3,
+      },
+    },
+    tap: {
+      scale: 0.95,
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+    hover: {
+      scale: 1.05,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+  };
 
   const projectData = [
     {
@@ -87,14 +163,6 @@ const Projects = () => {
       imgSrc: Nova,
       category: "wordpress",
     },
-    {
-      // id: "10",
-      // title: "Real Estate Listing Site",
-      // description: "Comprehensive WordPress real estate platform with property listings, advanced search filters, and virtual tour integration. Includes agent profiles and contact forms for seamless client communication.",
-      // link: "#",
-      // imgSrc: Landing,
-      // category: "wordpress",
-    },
   ];
 
   // Filter projects based on active category
@@ -104,58 +172,96 @@ const Projects = () => {
 
   return (
     <section className="p-6 sm:p-10" id="projects">
-      <h2 className="my-8 text-center text-3xl lg:text-8xl ">
+      <motion.h2
+        className="my-8 text-center text-3xl lg:text-8xl "
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        variants={headingVariants}
+      >
         My Work
-      </h2>
+      </motion.h2>
 
       {/* Category Filter Buttons */}
-      <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 mb-8 sm:mb-6 px-4">
-        <button
+      <motion.div
+        className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 mb-8 sm:mb-6 px-4"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.5 }}
+        variants={containerVariants}
+      >
+        <motion.button
           onClick={() => setActiveCategory("all")}
-          className={`w-full sm:w-auto px-4 sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "all"
+          className={`w-full sm:w-auto px-4 cursor-pointer sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "all"
             ? "bg-white text-black"
             : "bg-gray-800 text-white hover:bg-gray-700"
             }`}
+          variants={buttonVariants}
+          whileHover="hover"
+          whileTap="tap"
         >
           All Projects
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => setActiveCategory("react")}
-          className={`w-full sm:w-auto px-4 sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "react"
+          className={`w-full sm:w-auto px-4 cursor-pointer sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "react"
             ? "bg-white text-black"
             : "bg-gray-800 text-white hover:bg-gray-700"
             }`}
+          variants={buttonVariants}
+          whileHover="hover"
+          whileTap="tap"
         >
           Website Development
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => setActiveCategory("wordpress")}
-          className={`w-full sm:w-auto px-4 sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "wordpress"
+          className={`w-full sm:w-auto px-4 cursor-pointer sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "wordpress"
             ? "bg-white text-black"
             : "bg-gray-800 text-white hover:bg-gray-700"
             }`}
+          variants={buttonVariants}
+          whileHover="hover"
+          whileTap="tap"
         >
           WordPress Development
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Empty State */}
       {filteredProjects.length === 0 ? (
-        <p className="text-center text-gray-400 text-xl my-8">
+        <motion.p
+          className="text-center text-gray-400 text-xl my-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           No projects found in this category.
-        </p>
+        </motion.p>
       ) : (
         /* Masonry layout */
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-6">
-          {filteredProjects.map((project) => (
-            <a
+        <motion.div
+          className="columns-1 sm:columns-2 lg:columns-3 gap-6"
+          key={activeCategory}
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
+          {filteredProjects.map((project, index) => (
+            <motion.a
               key={project.id}
               href={project.link}
               target="_blank"
               rel="noopener noreferrer"
               className="block break-inside-avoid"
+              variants={itemVariants}
+              custom={index}
             >
-              <div className="relative mb-6 overflow-hidden rounded-xl shadow-lg hover:scale-[1.02] transition-transform duration-300">
+              <motion.div
+                className="relative mb-6 overflow-hidden rounded-xl shadow-lg transition-transform duration-300"
+                whileHover="hover"
+                variants={cardVariants}
+              >
                 <img
                   src={project.imgSrc}
                   alt={project.title}
@@ -175,10 +281,10 @@ const Projects = () => {
                     {project.description}
                   </p>
                 </div>
-              </div>
-            </a>
+              </motion.div>
+            </motion.a>
           ))}
-        </div>
+        </motion.div>
       )}
     </section>
   );
