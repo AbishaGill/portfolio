@@ -10,7 +10,7 @@ const Hero = () => {
         </h1>
         <div className="mt-8">
           <a
-            href="/Abisha_Iqbal_Gill_Resume.docx"
+            href="/Abisha_Iqbal_Gill_Resume (2).docx"
             rel="noopener noreferrer"
             target="_blank"
             download
