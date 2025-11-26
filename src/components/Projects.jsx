@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Landing from "/src/assets/photos/landingPhoto.png";
 import ecommerce from "/src/assets/photos/e-commerce.png"
@@ -13,6 +13,25 @@ import Nova from "/src/assets/photos/nova.png"
 
 const Projects = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   // Animation Variants
   const containerVariants = {
@@ -182,9 +201,144 @@ const Projects = () => {
         My Work
       </motion.h2>
 
-      {/* Category Filter Buttons */}
+      {/* Mobile Dropdown - Premium Dark Design with Deep Glassmorphism */}
+      <div className="sm:hidden relative mb-8 px-4" ref={dropdownRef}>
+        {/* Dropdown Trigger Button */}
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setDropdownOpen(false);
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setDropdownOpen(!dropdownOpen);
+            }
+          }}
+          aria-expanded={dropdownOpen}
+          aria-label="Filter projects by category"
+          className={`w-full px-6 py-4 text-sm sm:text-base rounded-xl font-semibold uppercase tracking-wide 
+          transition-all duration-300 flex items-center justify-between
+          ${dropdownOpen 
+            ? (activeCategory === "all" ? "bg-white text-black" : "bg-gray-800 text-white border-gray-600/50") 
+            : (activeCategory === "all" ? "bg-white text-black" : "bg-gray-800 text-white")
+          }
+          hover:bg-gray-700 border-2 border-gray-700/50 shadow-lg`}
+        >
+          <span className="truncate">
+            {activeCategory === "all" && "All Projects"}
+            {activeCategory === "react" && "Website Development"}
+            {activeCategory === "wordpress" && "WordPress Development"}
+          </span>
+          
+          {/* Animated Chevron Icon */}
+          <svg 
+            className={`w-5 h-5 ml-2 transition-transform duration-300 flex-shrink-0 
+            ${dropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2.5} 
+              d="M19 9l-7 7-7-7" 
+            />
+          </svg>
+        </button>
+        
+        {/* Dropdown Menu - Premium Dark Animated */}
+        <div className={`
+          absolute left-0 right-0 mt-2 rounded-xl overflow-hidden
+          transition-all duration-300 origin-top z-50
+          ${dropdownOpen 
+            ? 'opacity-100 scale-y-100 translate-y-0' 
+            : 'opacity-0 scale-y-95 -translate-y-2 pointer-events-none'
+          }
+        `}>
+          {/* Backdrop with blur effect - Deep Dark Theme */}
+          <div className="bg-gray-800/98 backdrop-blur-xl border-2 border-gray-700/50 shadow-[0_20px_70px_rgba(0,0,0,0.9)] rounded-xl overflow-hidden">
+            
+            {/* Dropdown Option: All Projects */}
+            <button
+              onClick={() => {
+                setActiveCategory("all");
+                setDropdownOpen(false);
+              }}
+              className={`
+                w-full px-6 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wide
+                transition-all duration-200 border-b border-gray-700/30 last:border-b-0
+                ${activeCategory === "all" 
+                  ? "bg-white text-black" 
+                  : "text-white hover:bg-gray-700/60 active:bg-gray-700"
+                }
+              `}
+            >
+              <span className="flex items-center justify-between">
+                <span>All Projects</span>
+                {activeCategory === "all" && (
+                  <svg className="w-5 h-5 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+            </button>
+            
+            {/* Dropdown Option: Website Development */}
+            <button
+              onClick={() => {
+                setActiveCategory("react");
+                setDropdownOpen(false);
+              }}
+              className={`
+                w-full px-6 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wide
+                transition-all duration-200 border-b border-gray-700/30 last:border-b-0
+                ${activeCategory === "react" 
+                  ? "bg-white text-black" 
+                  : "text-white hover:bg-gray-700/60 active:bg-gray-700"
+                }
+              `}
+            >
+              <span className="flex items-center justify-between">
+                <span>Website Development</span>
+                {activeCategory === "react" && (
+                  <svg className="w-5 h-5 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+            </button>
+            
+            {/* Dropdown Option: WordPress Development */}
+            <button
+              onClick={() => {
+                setActiveCategory("wordpress");
+                setDropdownOpen(false);
+              }}
+              className={`
+                w-full px-6 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wide
+                transition-all duration-200 border-b border-gray-700/30 last:border-b-0
+                ${activeCategory === "wordpress" 
+                  ? "bg-white text-black" 
+                  : "text-white hover:bg-gray-700/60 active:bg-gray-700"
+                }
+              `}
+            >
+              <span className="flex items-center justify-between">
+                <span>WordPress Development</span>
+                {activeCategory === "wordpress" && (
+                  <svg className="w-5 h-5 ml-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop/Tablet Buttons - Hidden on mobile, visible on screens >= 640px */}
       <motion.div
-        className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 mb-8 sm:mb-6 px-4"
+        className="hidden sm:flex flex-wrap justify-center gap-6 mb-6 px-4"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.5 }}
@@ -192,7 +346,7 @@ const Projects = () => {
       >
         <motion.button
           onClick={() => setActiveCategory("all")}
-          className={`w-full sm:w-auto px-4 cursor-pointer sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "all"
+          className={`px-6 py-3 text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 cursor-pointer ${activeCategory === "all"
             ? "bg-white text-black"
             : "bg-gray-800 text-white hover:bg-gray-700"
             }`}
@@ -204,7 +358,7 @@ const Projects = () => {
         </motion.button>
         <motion.button
           onClick={() => setActiveCategory("react")}
-          className={`w-full sm:w-auto px-4 cursor-pointer sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "react"
+          className={`px-6 py-3 text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 cursor-pointer ${activeCategory === "react"
             ? "bg-white text-black"
             : "bg-gray-800 text-white hover:bg-gray-700"
             }`}
@@ -216,7 +370,7 @@ const Projects = () => {
         </motion.button>
         <motion.button
           onClick={() => setActiveCategory("wordpress")}
-          className={`w-full sm:w-auto px-4 cursor-pointer sm:px-6 py-3 text-xs sm:text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 ${activeCategory === "wordpress"
+          className={`px-6 py-3 text-base rounded-xl font-semibold uppercase tracking-wide transition-all duration-300 cursor-pointer ${activeCategory === "wordpress"
             ? "bg-white text-black"
             : "bg-gray-800 text-white hover:bg-gray-700"
             }`}
