@@ -69,7 +69,7 @@ const Hero = () => {
           variants={buttonVariants}
         >
           <motion.a
-            href="/Abisha_Iqbal_Gill_Resume (2).docx"
+            href="/Abisha_Iqbal_Gill_Resume.docx"
             rel="noopener noreferrer"
             target="_blank"
             download
