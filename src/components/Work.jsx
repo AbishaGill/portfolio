@@ -56,12 +56,24 @@ const Work = () => {
         variants={containerVariants}
       >
         <motion.div className="mx-4 m-20" variants={itemVariants}>
+          <h2 className="font-medium lg:text-2xl">Floor Nexus</h2>
+          <div className="flex justify-between">
+            <p className="py-4 tracking-wide lg:text-xl">
+              Mobile App developer Intern (remote)
+            </p>
+            <p className="py-4 lg:text-xl">Feb 2026- March 2026</p>
+          </div>
+          <p className="font-sans text-gray-400">
+            Worked as a Mobile App Developer Intern at Floor Nexus, building and optimizing cross-platform features using React Native and Expo while improving UI performance and resolving layout issues in a remote agile team.
+          </p>
+        </motion.div>
+        <motion.div className="mx-4 m-20" variants={itemVariants}>
           <h2 className="font-medium lg:text-2xl">Nexobe</h2>
           <div className="flex justify-between">
             <p className="py-4 tracking-wide lg:text-xl">
               Junior Software Engineer (remote)
             </p>
-            <p className="py-4 lg:text-xl">Nov 2025- Present</p>
+            <p className="py-4 lg:text-xl">Nov 2025- Dec 2025</p>
           </div>
           <p className="font-sans text-gray-400">
             Nexobe, a US-based software engineering company specializing in SaaS product development. I develop and maintain tools using modern web technologies including Next.js, React.js, TypeScript, and Tailwind CSS. I actively collaborate with the design team to make informed UI decisions that enhance user experience and contribute to building reusable, high-performance front-end components that serve multiple projects across the organization. I collaborated closely with the web development team to ensure timely updates and maintain consistency across multiple company sites.
