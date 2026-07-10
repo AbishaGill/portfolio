@@ -1,5 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
+import Lanyard from "./Lanyard";
+import ScrollReveal from "./ScrollReveal";
 
 const Hero = () => {
   // Animation Variants
@@ -95,17 +97,46 @@ const Hero = () => {
             </svg>
           </motion.a>
         </motion.div>
-        <motion.div
-          className="w-full"
-          initial="hidden"
-          animate="visible"
-          variants={imageVariants}
-        >
-          <img
-            className="mt-8 h-[100%] w-full object-cover"
-            src="/abisha2.jpg"
-          />
-        </motion.div>
+
+        {/* Two-column row: ScrollReveal on the left, Lanyard on the right.
+            DOM order keeps mobile stacking as Lanyard → text; md:order swaps
+            them side-by-side on desktop (text left, card right). */}
+        <div className="mt-8 flex w-full flex-col items-center gap-8 md:flex-row md:items-stretch">
+          {/* Right (desktop): interactive Lanyard card.
+              Negative top margin pulls only this column upward so the card sits
+              higher in the viewport — ScrollReveal (separate column) is untouched. */}
+          <motion.div
+            className="-mt-16 w-full md:-mt-32 md:order-2 md:w-1/2"
+            initial="hidden"
+            animate="visible"
+            variants={imageVariants}
+          >
+            <div className="h-[80vh] w-full overflow-hidden">
+              <Lanyard
+                position={[0, 0, 20]}
+                gravity={[0, -40, 0]}
+                frontImage="/hero-photo.png"
+                imageFit="cover"
+              />
+            </div>
+          </motion.div>
+
+          {/* Left (desktop): ScrollReveal intro, vertically centered against the Lanyard */}
+          <div className="flex w-full items-center justify-center px-6 md:order-1 md:w-1/2 md:justify-start">
+            <div className="max-w-xl">
+              <ScrollReveal
+                baseOpacity={0}
+                enableBlur={true}
+                baseRotation={3}
+                blurStrength={8}
+                rotationEnd="+=400"
+                wordAnimationEnd="+=400"
+              >
+                Wrote my first line of code not knowing what a semicolon was. Now I ship full websites and still forget the semicolon sometimes. Growth.
+              </ScrollReveal>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

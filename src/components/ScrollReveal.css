@@ -1,0 +1,13 @@
+.scroll-reveal {
+  margin: 20px 0;
+}
+
+.scroll-reveal-text {
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  line-height: 1.5;
+  /* Inherit the site's global font-family (Oswald) and weight (font-light) */
+}
+
+.word {
+  display: inline-block;
+}
