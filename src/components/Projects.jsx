@@ -9,6 +9,9 @@ import Reviewfy from "/src/assets/photos/reviewfy.png"
 import Peace from "/src/assets/photos/peace.png"
 import Tic from "/src/assets/photos/tiktac.png"
 import Nova from "/src/assets/photos/nova.png"
+import lumis from "/src/assets/photos/lumis-cleaning.png"
+import stratum from "/src/assets/photos/stratum-flooringg.png"
+import vector from "/src/assets/photos/vector-dispatching.png"
 
 
 const Projects = () => {
@@ -118,38 +121,38 @@ const Projects = () => {
       imgSrc: Landing,
       category: "react",
     },
-    {
-      id: "2",
-      title: "Tic Tac Toe",
-      description: "A responsive browser-based Tic-Tac-Toe app that allows players to compete against each other on any device.",
-      link: "https://tic-tac-toe-gill.netlify.app/",
-      imgSrc: Tic,
-      category: "react",
-    },
-    {
-      id: "3",
-      title: "E-commerce Website",
-      description: "This is a simple e-commerce website built with React.It demonstrates a basic online store setup where users can browse products, add them to the cart, and proceed with a checkout flow.",
-      link: "https://ecommerce-reacjst.netlify.app/",
-      imgSrc: ecommerce,
-      category: "react",
-    },
-    {
-      id: "4",
-      title: "Movie Website",
-      description: "This movie website is a small React application that lists movies, lets users search and view movie details, and demonstrates modern front-end practices.",
-      link: "https://moviee-app-reactjs.netlify.app/",
-      imgSrc: movie,
-      category: "react",
-    },
-    {
-      id: "5",
-      title: "Coffee Website",
-      description: "Coffee Web React is a modern and responsive website built with React.js, designed for a coffee shop or café. It highlights a simple yet elegant layout with sections for the menu, coffee varieties, images, and contact information.",
-      link: "https://coffee-web-react.netlify.app/",
-      imgSrc: coffee,
-      category: "react",
-    },
+    // {
+    //   id: "2",
+    //   title: "Tic Tac Toe",
+    //   description: "A responsive browser-based Tic-Tac-Toe app that allows players to compete against each other on any device.",
+    //   link: "https://tic-tac-toe-gill.netlify.app/",
+    //   imgSrc: Tic,
+    //   category: "react",
+    // },
+    // {
+    //   id: "3",
+    //   title: "E-commerce Website",
+    //   description: "This is a simple e-commerce website built with React.It demonstrates a basic online store setup where users can browse products, add them to the cart, and proceed with a checkout flow.",
+    //   link: "https://ecommerce-reacjst.netlify.app/",
+    //   imgSrc: ecommerce,
+    //   category: "react",
+    // },
+    // {
+    //   id: "4",
+    //   title: "Movie Website",
+    //   description: "This movie website is a small React application that lists movies, lets users search and view movie details, and demonstrates modern front-end practices.",
+    //   link: "https://moviee-app-reactjs.netlify.app/",
+    //   imgSrc: movie,
+    //   category: "react",
+    // },
+    // {
+    //   id: "5",
+    //   title: "Coffee Website",
+    //   description: "Coffee Web React is a modern and responsive website built with React.js, designed for a coffee shop or café. It highlights a simple yet elegant layout with sections for the menu, coffee varieties, images, and contact information.",
+    //   link: "https://coffee-web-react.netlify.app/",
+    //   imgSrc: coffee,
+    //   category: "react",
+    // },
     {
       id: "6",
       title: "Ripon Cathedral",
@@ -181,6 +184,30 @@ const Projects = () => {
       link: "https://novacity.pk/",
       imgSrc: Nova,
       category: "wordpress",
+    },
+    {
+      id: "10",
+      title: "Lumis Cleaning",
+      description: "Premium marketing site for a home cleaning brand with booking flow, animated stats, and before/after showcases.",
+      link: "https://lumis-cleaning.vercel.app/",
+      imgSrc: lumis,
+      category: "react",
+    },
+    {
+      id: "11",
+      title: "Vector Dispatching",
+      description: "Bold B2B landing page for a freight dispatch company covering trailer services, testimonials, and results.",
+      link: "https://vector-dispatching.vercel.app/",
+      imgSrc: vector,
+      category: "react",
+    },
+    {
+      id: "12",
+      title: "Stratum Flooring",
+      description: "Portfolio-style site for a flooring company with services grid, process timeline, and project gallery.",
+      link: "https://stratum-flooringg.vercel.app/",
+      imgSrc: stratum,
+      category: "react",
     },
   ];
 
@@ -217,10 +244,10 @@ const Projects = () => {
           aria-label="Filter projects by category"
           className={`w-full px-6 py-4 text-sm sm:text-base rounded-xl font-semibold uppercase tracking-wide 
           transition-all duration-300 flex items-center justify-between
-          ${dropdownOpen 
-            ? (activeCategory === "all" ? "bg-white text-black" : "bg-gray-800 text-white border-gray-600/50") 
-            : (activeCategory === "all" ? "bg-white text-black" : "bg-gray-800 text-white")
-          }
+          ${dropdownOpen
+              ? (activeCategory === "all" ? "bg-white text-black" : "bg-gray-800 text-white border-gray-600/50")
+              : (activeCategory === "all" ? "bg-white text-black" : "bg-gray-800 text-white")
+            }
           hover:bg-gray-700 border-2 border-gray-700/50 shadow-lg`}
         >
           <span className="truncate">
@@ -228,36 +255,36 @@ const Projects = () => {
             {activeCategory === "react" && "Website Development"}
             {activeCategory === "wordpress" && "WordPress Development"}
           </span>
-          
+
           {/* Animated Chevron Icon */}
-          <svg 
+          <svg
             className={`w-5 h-5 ml-2 transition-transform duration-300 flex-shrink-0 
             ${dropdownOpen ? 'rotate-180' : 'rotate-0'}`}
-            fill="none" 
-            stroke="currentColor" 
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2.5} 
-              d="M19 9l-7 7-7-7" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M19 9l-7 7-7-7"
             />
           </svg>
         </button>
-        
+
         {/* Dropdown Menu - Premium Dark Animated */}
         <div className={`
           absolute left-0 right-0 mt-2 rounded-xl overflow-hidden
           transition-all duration-300 origin-top z-50
-          ${dropdownOpen 
-            ? 'opacity-100 scale-y-100 translate-y-0' 
+          ${dropdownOpen
+            ? 'opacity-100 scale-y-100 translate-y-0'
             : 'opacity-0 scale-y-95 -translate-y-2 pointer-events-none'
           }
         `}>
           {/* Backdrop with blur effect - Deep Dark Theme */}
           <div className="bg-gray-800/98 backdrop-blur-xl border-2 border-gray-700/50 shadow-[0_20px_70px_rgba(0,0,0,0.9)] rounded-xl overflow-hidden">
-            
+
             {/* Dropdown Option: All Projects */}
             <button
               onClick={() => {
@@ -267,8 +294,8 @@ const Projects = () => {
               className={`
                 w-full px-6 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wide
                 transition-all duration-200 border-b border-gray-700/30 last:border-b-0
-                ${activeCategory === "all" 
-                  ? "bg-white text-black" 
+                ${activeCategory === "all"
+                  ? "bg-white text-black"
                   : "text-white hover:bg-gray-700/60 active:bg-gray-700"
                 }
               `}
@@ -282,7 +309,7 @@ const Projects = () => {
                 )}
               </span>
             </button>
-            
+
             {/* Dropdown Option: Website Development */}
             <button
               onClick={() => {
@@ -292,8 +319,8 @@ const Projects = () => {
               className={`
                 w-full px-6 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wide
                 transition-all duration-200 border-b border-gray-700/30 last:border-b-0
-                ${activeCategory === "react" 
-                  ? "bg-white text-black" 
+                ${activeCategory === "react"
+                  ? "bg-white text-black"
                   : "text-white hover:bg-gray-700/60 active:bg-gray-700"
                 }
               `}
@@ -307,7 +334,7 @@ const Projects = () => {
                 )}
               </span>
             </button>
-            
+
             {/* Dropdown Option: WordPress Development */}
             <button
               onClick={() => {
@@ -317,8 +344,8 @@ const Projects = () => {
               className={`
                 w-full px-6 py-4 text-left text-sm sm:text-base font-semibold uppercase tracking-wide
                 transition-all duration-200 border-b border-gray-700/30 last:border-b-0
-                ${activeCategory === "wordpress" 
-                  ? "bg-white text-black" 
+                ${activeCategory === "wordpress"
+                  ? "bg-white text-black"
                   : "text-white hover:bg-gray-700/60 active:bg-gray-700"
                 }
               `}
