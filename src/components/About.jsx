@@ -47,7 +47,7 @@ const About = () => {
           viewport={{ once: true, amount: 0.3 }}
           variants={textVariants}
         >
-        I'm Abisha Gill, a frontend developer with expertise in React.js, WordPress, and GoHighLevel (GHL). I enjoy turning ideas into interactive, responsive, and visually appealing web applications. Along with building custom WordPress sites using themes, plugins, and custom code (HTML, CSS, JavaScript, PHP), I also design funnels and automations in GHL to help businesses streamline marketing and boost growth. This mix of modern frontend skills, CMS flexibility, and automation gives me the ability to deliver complete digital solutions.
+          I'm Abisha Gill, a frontend developer with expertise in React.js, React Native, Next.js, and TypeScript. I enjoy turning ideas into interactive, responsive, and visually appealing web and mobile applications using modern tools like Tailwind CSS. Along with building custom WordPress sites using themes, plugins, and custom code, I've also worked on manual and automated QA testing, giving me a well-rounded perspective on both building and validating quality software. I thrive in collaborative, agile remote teams, delivering reusable components and reliable features across multiple projects.
         </motion.p>
       </div>
     </section>
