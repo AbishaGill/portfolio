@@ -16,10 +16,10 @@ const Marquee = () => {
           }}
           className="py-2 text-3xl font-bold leading-none tracking-tigher lg:text-7xl"
         >
-          REACT · TAILWIND · JAVASCRIPT · HTML · CSS · GIT · GITHUB · WORDPRESS · REACT ·
+          REACT JS · NEXT JS · TYPESCRIPT · TAILWIND · JAVASCRIPT · HTML · CSS · GIT · GITHUB · WORDPRESS · REACT ·
           TAILWIND · JAVASCRIPT · HTML · CSS · GIT · GITHUB ·  WORDPRESS · REACT · TAILWIND ·
           JAVASCRIPT · HTML · CSS · GIT · GITHUB ·  WORDPRESS · REACT · TAILWIND · JAVASCRIPT
-          · HTML · CSS · GIT · GITHUB · WORDPRESS 
+          · HTML · CSS · GIT · GITHUB · WORDPRESS
         </motion.h1>
       </div>
     </div>
@@ -27,4 +27,3 @@ const Marquee = () => {
 };
 
 export default Marquee;
-  
