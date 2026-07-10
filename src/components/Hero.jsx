@@ -102,9 +102,11 @@ const Hero = () => {
             DOM order keeps mobile stacking as Lanyard → text; md:order swaps
             them side-by-side on desktop (text left, card right). */}
         <div className="mt-8 flex w-full flex-col items-center gap-8 md:flex-row md:items-stretch">
-          {/* Right (desktop): interactive Lanyard card */}
+          {/* Right (desktop): interactive Lanyard card.
+              Negative top margin pulls only this column upward so the card sits
+              higher in the viewport — ScrollReveal (separate column) is untouched. */}
           <motion.div
-            className="w-full md:order-2 md:w-1/2"
+            className="-mt-16 w-full md:-mt-32 md:order-2 md:w-1/2"
             initial="hidden"
             animate="visible"
             variants={imageVariants}
