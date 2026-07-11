@@ -2,7 +2,11 @@
   position: relative;
   z-index: 0;
   width: 100%;
-  height: 100vh;
+  /* Fill the parent slot (Hero sizes it, e.g. h-[80vh]) instead of forcing the
+     full viewport height. 100vh overflowed the slot by 20vh, and on mobile the
+     oversized canvas footprint collided with the Resume button. % scales
+     proportionally across mobile / tablet / desktop. */
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
