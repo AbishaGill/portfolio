@@ -5,7 +5,11 @@
 
 :root {
   font-family: "Oswald";
-  background-color: black;
+  /* Single source of truth for the page background. Referenced by the Lanyard
+     wrapper/canvas so its background follows the page theme (no hardcoded black
+     to drift if the theme changes). */
+  --page-bg: black;
+  background-color: var(--page-bg);
   scroll-behavior: smooth;
 }
 
