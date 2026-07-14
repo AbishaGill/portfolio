@@ -12,4 +12,14 @@
   align-items: center;
   transform: scale(1);
   transform-origin: center;
+  /* Paint the page background immediately so there's no white flash before the
+     WebGL context initializes and sets its (transparent) clear color. Uses the
+     shared --page-bg token so it tracks the page theme instead of hardcoding. */
+  background-color: var(--page-bg, black);
+}
+
+/* The raw <canvas> can show a white default frame before the WebGL context is
+   ready; keep it on the page background until Three.js takes over. */
+.lanyard-wrapper canvas {
+  background-color: var(--page-bg, black);
 }

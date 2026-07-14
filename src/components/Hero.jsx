@@ -55,8 +55,11 @@ const Hero = ({ lanyardPaused = false }) => {
   return (
     <section>
       <div className="flex flex-col items-center justify-center">
+        {/* relative z-10: keep the heading above the Lanyard column, whose
+            opaque black bg (white-flash fix) and md:-mt-32 offset otherwise
+            paint over this text since the Lanyard row comes later in the DOM. */}
         <motion.h1
-          className="mt-16 overflow-hidden text-[12vw] font-semibold uppercase leading-none"
+          className="relative z-10 mt-16 overflow-hidden text-[12vw] font-semibold uppercase leading-none"
           initial="hidden"
           animate="visible"
           variants={headingVariants}
@@ -64,8 +67,10 @@ const Hero = ({ lanyardPaused = false }) => {
           Abisha <br />
           Gill
         </motion.h1>
+        {/* relative z-10: keep the Resume button above the Lanyard bg so it stays
+            fully visible and clickable. */}
         <motion.div
-          className="mt-8"
+          className="relative z-10 mt-8"
           initial="hidden"
           animate="visible"
           variants={buttonVariants}
@@ -118,7 +123,7 @@ const Hero = ({ lanyardPaused = false }) => {
               <Lanyard
                 position={[0, 0, 20]}
                 gravity={[0, -40, 0]}
-                frontImage="/hero-photo.png"
+                frontImage="/headshot.png"
                 imageFit="cover"
                 paused={lanyardPaused}
               />
