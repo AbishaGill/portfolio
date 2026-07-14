@@ -33,6 +33,13 @@ html.preloader-active body::-webkit-scrollbar {
   display: none; /* Chrome / Safari / other webkit */
 }
 
+/* Hide the custom cursor while the preloader overlay is up — the preloader
+   toggles this class on <html> (see usePreloader), so the cursor appears only
+   once the site is revealed. Native cursor is already hidden globally below. */
+html.preloader-active .smooth-cursor {
+  display: none !important;
+}
+
 /* SmoothCursor: hide the native cursor from the FIRST PAINT — this stylesheet
    loads synchronously (imported in main.jsx), so it wins the race against JS
    hydration (no native-cursor flash on reload). Gated on a fine pointer so

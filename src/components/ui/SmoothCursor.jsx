@@ -118,7 +118,8 @@ export function SmoothCursor({
   return (
     <motion.div
       // hidden md:block: extra touch/small-screen guard from the MagicUI demo.
-      className="hidden md:block"
+      // smooth-cursor: lets index.css hide it while the preloader is active.
+      className="smooth-cursor hidden md:block"
       style={{
         position: "fixed",
         left: 0,

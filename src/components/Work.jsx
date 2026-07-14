@@ -57,15 +57,15 @@ const Work = () => {
       >
         <motion.div className="mx-4 m-20" variants={itemVariants}>
           <div className="flex justify-between"> <h2 className="font-medium lg:text-2xl">Floor Nexus</h2>
-            <p className="py-4 lg:text-xl">Feb 2026 - Present</p>
+            {/* <p className="py-4 lg:text-xl">Feb 2026 - Present</p> */}
           </div>
           <p className="font-sans text-gray-400">
-            <span className="font-semibold text-white">Frontend Developer</span>{" "}
+            {/* <span className="font-semibold text-white">Frontend Developer</span>{" "}
             <span className="font-medium text-white">(Jun 2026 – Present):</span> Developing responsive web interfaces and mobile app UI using React.js, React Native, and Tailwind CSS, building reusable components across web and mobile platforms, and collaborating with design and backend teams on product decisions.
-            <br />
+            <br /> */}
             <br />
             <span className="font-semibold text-white">SQA Engineer</span>{" "}
-            <span className="font-medium text-white">(Apr 2026 – May 2026):</span> Wrote manual test cases and performed automated testing for the mobile app, reporting and tracking bugs in collaboration with the dev team.
+            <span className="font-medium text-white">(Apr 2026 – Present):</span> Wrote manual test cases and performed automated testing for the mobile app, reporting and tracking bugs in collaboration with the dev team.
             <br />
             <br />
             <span className="font-semibold text-white">Mobile App Developer Intern</span>{" "}
