@@ -62,12 +62,33 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     return undefined;
   }, [index, stage, words.length, duration, schedule]);
 
-  // Curtain choreography total ~1.5s (skipped for reduced motion → fast fade).
-  const handleCurtainComplete = useCallback(() => {
+  // Single guarded finish path — used by both the normal curtain completion
+  // and the fail-safe below, so onFinish can never fire twice.
+  const finishedRef = useRef(false);
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     setStage("done");
     setFinished(true);
     onFinishRef.current?.();
   }, []);
+
+  // Curtain choreography total ~1.5s (skipped for reduced motion → fast fade).
+  const handleCurtainComplete = finish;
+
+  // FAIL-SAFE: the preloader must never hide the site indefinitely. Its word
+  // advance depends on animation-completion callbacks (AnimatePresence
+  // mode="wait" waits for each exit to finish); if a low-end device stalls that
+  // chain (main-thread contention, throttled rAF, etc.), the overlay would sit
+  // on the first word forever. Force-finish after the worst-case expected run
+  // time plus a generous margin — a no-op whenever the normal flow completes.
+  useEffect(() => {
+    const perWord = duration + 1200; // hold + enter ~550 + exit ~450 + overhead
+    const curtain = 1500;
+    const margin = 5000;
+    const total = words.length * perWord + FINAL_HOLD + curtain + margin;
+    schedule(finish, total);
+  }, [words.length, duration, schedule, finish]);
 
   // Lock scroll AND hide the scrollbar track while the overlay is active.
   // Uses a class (styles in index.css) so we can suppress the webkit + Firefox
