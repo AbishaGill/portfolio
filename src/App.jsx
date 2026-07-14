@@ -20,7 +20,10 @@ function App() {
       {loading && <Preloader onFinish={() => setLoading(false)} />}
       <div className="font-light text-white antialiased selection:bg-lime-300 selection:text-black">
         <Navbar />
-        <Hero />
+        {/* Hold the Lanyard's physics drop-in until the preloader finishes, so
+            its top-to-bottom entrance actually plays on reveal instead of
+            settling silently behind the overlay. */}
+        <Hero lanyardPaused={loading} />
         <Marquee />
         <Projects />
         <About />

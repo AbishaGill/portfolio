@@ -69,13 +69,15 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     onFinishRef.current?.();
   }, []);
 
-  // Body scroll lock while the overlay is active; always restored on unmount.
+  // Lock scroll AND hide the scrollbar track while the overlay is active.
+  // Uses a class (styles in index.css) so we can suppress the webkit + Firefox
+  // scrollbar, not just the scroll position. Always removed on unmount so the
+  // landing page's scrollbar and scrolling are fully restored.
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.documentElement.classList.add("preloader-active");
     return () => {
-      document.body.style.overflow = original;
+      document.documentElement.classList.remove("preloader-active");
     };
   }, []);
 

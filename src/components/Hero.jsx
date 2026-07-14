@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Lanyard from "./Lanyard";
 import ScrollReveal from "./ScrollReveal";
 
-const Hero = () => {
+const Hero = ({ lanyardPaused = false }) => {
   // Animation Variants
   const headingVariants = {
     hidden: { opacity: 0, y: 50 },
@@ -105,8 +105,11 @@ const Hero = () => {
           {/* Right (desktop): interactive Lanyard card.
               Negative top margin pulls only this column upward so the card sits
               higher in the viewport — ScrollReveal (separate column) is untouched. */}
+          {/* mobile: no negative top margin (was -mt-16, which pulled the card
+              up into the Resume button). md:-mt-32 keeps the desktop/tablet
+              upward offset unchanged. */}
           <motion.div
-            className="-mt-16 w-full md:-mt-32 md:order-2 md:w-1/2"
+            className="mt-0 w-full md:-mt-32 md:order-2 md:w-1/2"
             initial="hidden"
             animate="visible"
             variants={imageVariants}
@@ -117,6 +120,7 @@ const Hero = () => {
                 gravity={[0, -40, 0]}
                 frontImage="/hero-photo.png"
                 imageFit="cover"
+                paused={lanyardPaused}
               />
             </div>
           </motion.div>

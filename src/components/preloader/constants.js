@@ -17,17 +17,19 @@ export const EASE_CURTAIN = [0.76, 0, 0.24, 1]; // inOut-quint — liquid sheet
 
 // Hold for the FINAL word before the curtain starts. Kept short so the reveal
 // flows in quickly (unlike the 3s word-to-word gap): ~550ms enter + ~150ms beat.
-export const FINAL_HOLD = 1000;
+export const FINAL_HOLD = 900;
 
 export const DEFAULTS = {
-  duration: 1000, // per-word on-screen hold (ms) → ≥3s gap between words
+  duration: 900, // per-word on-screen hold (ms) 
   backgroundColor: "#ffffff",
   textColor: "#333333", // dark charcoal, per reference
   // Poppins Bold = rounded geometric sans (loaded via index.css @import).
   // Falls back to system sans-serif if the webfont fails to load.
   fontFamily: "'Poppins', sans-serif",
   fontWeight: 500,
-  fontSize: "clamp(2.5rem, 12vw, 9rem)", // responsive: mobile → ultrawide
+  // Responsive via clamp: ~36px mobile floor → scales with viewport → 72px cap
+  // on tablet/desktop/ultrawide. Never overflows narrow screens.
+  fontSize: "clamp(2.25rem, 8vw, 4.5rem)",
   curveHeight: 220,
 };
 
