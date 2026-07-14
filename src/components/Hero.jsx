@@ -84,6 +84,7 @@ const Hero = ({ lanyardPaused = false }) => {
             whileHover="hover"
             whileTap="tap"
             variants={buttonVariants}
+            data-cursor-label="Open"
           >
             <span>Resume</span>
             <svg

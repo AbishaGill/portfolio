@@ -8,12 +8,16 @@ import Work from "./components/Work";
 import Contact from "./components/Contact";
 import Projects from "./components/Projects";
 import Preloader from "./components/preloader/Preloader";
+import SmoothCursor from "./components/ui/SmoothCursor";
 
 function App() {
   const [loading, setLoading] = useState(true);
 
   return (
     <>
+      {/* Site-wide spring-follow cursor (MagicUI SmoothCursor, ported to JSX).
+          Self-disables on touch devices; native cursor is hidden via index.css. */}
+      <SmoothCursor />
       {/* Fullscreen intro overlay. Renders above the app on first load and
           fully unmounts after its liquid-sheet reveal (onFinish). The app below
           stays mounted the whole time → zero white flash / zero layout shift. */}
