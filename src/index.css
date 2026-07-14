@@ -9,6 +9,10 @@
      wrapper/canvas so its background follows the page theme (no hardcoded black
      to drift if the theme changes). */
   --page-bg: black;
+  /* Primary text / default custom-cursor color, and the lime accent used on
+     interactive elements. Tokens so the cursor tracks the theme, not hex. */
+  --text-primary: #ffffff;
+  --accent: #bef264; /* lime-300 */
   background-color: var(--page-bg);
   scroll-behavior: smooth;
 }
@@ -27,4 +31,28 @@ html.preloader-active body::-webkit-scrollbar {
   width: 0;
   height: 0;
   display: none; /* Chrome / Safari / other webkit */
+}
+
+/* SmoothCursor: hide the native cursor from the FIRST PAINT — this stylesheet
+   loads synchronously (imported in main.jsx), so it wins the race against JS
+   hydration (no native-cursor flash on reload). Gated on a fine pointer so
+   touch/mobile devices keep their native behavior. Interactive elements are
+   listed explicitly because their UA `cursor: pointer` would otherwise show
+   through on some browsers (known SmoothCursor issue). */
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  body *,
+  a,
+  button,
+  [role="button"] {
+    cursor: none !important;
+  }
+
+  /* The Lanyard card keeps a native grab cursor to signal draggability
+     (higher specificity than `body *`, so it wins over that region). */
+  .lanyard-wrapper,
+  .lanyard-wrapper * {
+    cursor: grab !important;
+  }
 }
