@@ -56,15 +56,20 @@ const Work = () => {
         variants={containerVariants}
       >
         <motion.div className="mx-4 m-20" variants={itemVariants}>
-          <h2 className="font-medium lg:text-2xl">Floor Nexus</h2>
-          <div className="flex justify-between">
-            <p className="py-4 tracking-wide lg:text-xl">
-              Mobile App developer Intern (remote)
-            </p>
-            <p className="py-4 lg:text-xl">Feb 2026- March 2026</p>
+          <div className="flex justify-between"> <h2 className="font-medium lg:text-2xl">Floor Nexus</h2>
+            <p className="py-4 lg:text-xl">Feb 2026 - Present</p>
           </div>
           <p className="font-sans text-gray-400">
-            Worked as a Mobile App Developer Intern at Floor Nexus, building and optimizing cross-platform features using React Native and Expo while improving UI performance and resolving layout issues in a remote agile team.
+            <span className="font-semibold text-white">Frontend Developer</span>{" "}
+            <span className="font-medium text-white">(Jun 2026 – Present):</span> Developing responsive web interfaces and mobile app UI using React.js, React Native, and Tailwind CSS, building reusable components across web and mobile platforms, and collaborating with design and backend teams on product decisions.
+            <br />
+            <br />
+            <span className="font-semibold text-white">SQA Engineer</span>{" "}
+            <span className="font-medium text-white">(Apr 2026 – May 2026):</span> Wrote manual test cases and performed automated testing for the mobile app, reporting and tracking bugs in collaboration with the dev team.
+            <br />
+            <br />
+            <span className="font-semibold text-white">Mobile App Developer Intern</span>{" "}
+            <span className="font-medium text-white">(Feb 2026 – Mar 2026):</span> Built and maintained cross-platform features using React Native and Expo while improving UI performance and resolving layout issues in a remote agile team.
           </p>
         </motion.div>
         <motion.div className="mx-4 m-20" variants={itemVariants}>

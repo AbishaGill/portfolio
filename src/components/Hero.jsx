@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Lanyard from "./Lanyard";
 import ScrollReveal from "./ScrollReveal";
 
-const Hero = () => {
+const Hero = ({ lanyardPaused = false }) => {
   // Animation Variants
   const headingVariants = {
     hidden: { opacity: 0, y: 50 },
@@ -55,8 +55,11 @@ const Hero = () => {
   return (
     <section>
       <div className="flex flex-col items-center justify-center">
+        {/* relative z-10: keep the heading above the Lanyard column, whose
+            opaque black bg (white-flash fix) and md:-mt-32 offset otherwise
+            paint over this text since the Lanyard row comes later in the DOM. */}
         <motion.h1
-          className="mt-16 overflow-hidden text-[12vw] font-semibold uppercase leading-none"
+          className="relative z-10 mt-16 overflow-hidden text-[12vw] font-semibold uppercase leading-none"
           initial="hidden"
           animate="visible"
           variants={headingVariants}
@@ -64,8 +67,10 @@ const Hero = () => {
           Abisha <br />
           Gill
         </motion.h1>
+        {/* relative z-10: keep the Resume button above the Lanyard bg so it stays
+            fully visible and clickable. */}
         <motion.div
-          className="mt-8"
+          className="relative z-10 mt-8"
           initial="hidden"
           animate="visible"
           variants={buttonVariants}
@@ -105,8 +110,11 @@ const Hero = () => {
           {/* Right (desktop): interactive Lanyard card.
               Negative top margin pulls only this column upward so the card sits
               higher in the viewport — ScrollReveal (separate column) is untouched. */}
+          {/* mobile: no negative top margin (was -mt-16, which pulled the card
+              up into the Resume button). md:-mt-32 keeps the desktop/tablet
+              upward offset unchanged. */}
           <motion.div
-            className="-mt-16 w-full md:-mt-32 md:order-2 md:w-1/2"
+            className="mt-0 w-full md:-mt-32 md:order-2 md:w-1/2"
             initial="hidden"
             animate="visible"
             variants={imageVariants}
@@ -115,8 +123,9 @@ const Hero = () => {
               <Lanyard
                 position={[0, 0, 20]}
                 gravity={[0, -40, 0]}
-                frontImage="/hero-photo.png"
+                frontImage="/headshot.png"
                 imageFit="cover"
+                paused={lanyardPaused}
               />
             </div>
           </motion.div>

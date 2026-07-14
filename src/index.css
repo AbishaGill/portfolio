@@ -1,9 +1,30 @@
 @import url("https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap");
 
 @import "tailwindcss";
 
 :root {
   font-family: "Oswald";
-  background-color: black;
+  /* Single source of truth for the page background. Referenced by the Lanyard
+     wrapper/canvas so its background follows the page theme (no hardcoded black
+     to drift if the theme changes). */
+  --page-bg: black;
+  background-color: var(--page-bg);
   scroll-behavior: smooth;
+}
+
+/* While the preloader overlay is mounted: lock scroll AND fully hide the
+   scrollbar track (not just the position). Removed on unmount → the landing
+   page's scrollbar + scrolling are restored. */
+html.preloader-active,
+html.preloader-active body {
+  overflow: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+html.preloader-active::-webkit-scrollbar,
+html.preloader-active body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome / Safari / other webkit */
 }

@@ -2,10 +2,24 @@
   position: relative;
   z-index: 0;
   width: 100%;
-  height: 100vh;
+  /* Fill the parent slot (Hero sizes it, e.g. h-[80vh]) instead of forcing the
+     full viewport height. 100vh overflowed the slot by 20vh, and on mobile the
+     oversized canvas footprint collided with the Resume button. % scales
+     proportionally across mobile / tablet / desktop. */
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   transform: scale(1);
   transform-origin: center;
+  /* Paint the page background immediately so there's no white flash before the
+     WebGL context initializes and sets its (transparent) clear color. Uses the
+     shared --page-bg token so it tracks the page theme instead of hardcoding. */
+  background-color: var(--page-bg, black);
+}
+
+/* The raw <canvas> can show a white default frame before the WebGL context is
+   ready; keep it on the page background until Three.js takes over. */
+.lanyard-wrapper canvas {
+  background-color: var(--page-bg, black);
 }
