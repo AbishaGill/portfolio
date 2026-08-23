@@ -58,6 +58,7 @@ export default function Lanyard({
   paused = false
 }) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const hasCustomImage = Boolean(frontImage || backImage);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -71,7 +72,13 @@ export default function Lanyard({
       <Canvas
         camera={{ position: position, fov: fov }}
         dpr={[1, isMobile ? 1.5 : 2]}
-        gl={{ alpha: transparent }}
+        gl={{
+          alpha: transparent,
+          // ACES lifts blacks and desaturates portraits. Custom photos skip it
+          // so headshot.png matches its file; the default card texture keeps ACES.
+          toneMapping: hasCustomImage ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
+          outputColorSpace: THREE.SRGBColorSpace
+        }}
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
       >
         <ambientLight intensity={Math.PI} />
@@ -274,14 +281,29 @@ function Band({
             )}
           >
             <mesh geometry={nodes.card.geometry}>
-              <meshPhysicalMaterial
-                map={cardMap}
-                map-anisotropy={16}
-                clearcoat={isMobile ? 0 : 1}
-                clearcoatRoughness={0.15}
-                roughness={0.9}
-                metalness={0.8}
-              />
+              {frontImage || backImage ? (
+                // Custom photos must stay unlit. meshPhysicalMaterial + IBL
+                // (metalness 0.8, clearcoat 1, Environment lightformers) treats
+                // the albedo as a metallic reflector and ACES-tone-maps it,
+                // which is what made headshot.png look faded/washed-out.
+                <meshBasicMaterial
+                  map={cardMap}
+                  map-anisotropy={16}
+                  transparent={false}
+                  opacity={1}
+                  toneMapped={false}
+                  envMap={null}
+                />
+              ) : (
+                <meshPhysicalMaterial
+                  map={cardMap}
+                  map-anisotropy={16}
+                  clearcoat={isMobile ? 0 : 1}
+                  clearcoatRoughness={0.15}
+                  roughness={0.9}
+                  metalness={0.8}
+                />
+              )}
             </mesh>
             <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
