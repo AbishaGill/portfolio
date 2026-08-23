@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://abisha-gill-portfolio.netlify.app/sitemap.xml

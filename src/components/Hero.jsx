@@ -64,7 +64,7 @@ const Hero = ({ lanyardPaused = false }) => {
           animate="visible"
           variants={headingVariants}
         >
-          Abisha <br />
+          Abisha Iqbal <br />
           Gill
         </motion.h1>
         {/* relative z-10: keep the Resume button above the Lanyard bg so it stays
