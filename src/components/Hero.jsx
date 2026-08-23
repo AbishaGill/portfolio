@@ -65,7 +65,7 @@ const Hero = ({ lanyardPaused = false }) => {
           variants={headingVariants}
         >
           Abisha Iqbal <br />
-          Gill
+          <span className="block text-center">Gill</span>
         </motion.h1>
         {/* relative z-10: keep the Resume button above the Lanyard bg so it stays
             fully visible and clickable. */}
@@ -120,7 +120,7 @@ const Hero = ({ lanyardPaused = false }) => {
             animate="visible"
             variants={imageVariants}
           >
-            <div className="h-[80vh] w-full overflow-hidden">
+            <div className="h-[clamp(22rem,72vh,36rem)] w-full overflow-hidden md:h-[clamp(28rem,80vh,48rem)]">
               <Lanyard
                 position={[0, 0, 20]}
                 gravity={[0, -40, 0]}

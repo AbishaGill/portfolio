@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 'use client';
 import { Component, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, extend, useFrame } from '@react-three/fiber';
+import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
 import { BallCollider, CuboidCollider, Physics, RigidBody, useRopeJoint, useSphericalJoint } from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
@@ -13,6 +13,18 @@ import * as THREE from 'three';
 import './Lanyard.css';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
+
+// R3F only uses Canvas `camera.position` as the *initial* value. Keep the
+// framed size in sync when the responsive distance changes (mobile/desktop).
+function CameraFramer({ x, y, z, fov }) {
+  const camera = useThree(state => state.camera);
+  useEffect(() => {
+    camera.position.set(x, y, z);
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+  }, [camera, x, y, z, fov]);
+  return null;
+}
 
 // 1x1 transparent pixel — lets useTexture be called unconditionally when a
 // front/back image isn't supplied.
@@ -58,6 +70,14 @@ export default function Lanyard({
   paused = false
 }) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const hasCustomImage = Boolean(frontImage || backImage);
+  // World-space uniform scale so string + card grow together. Camera/FOV stay
+  // at the caller values (no clip-from-zoom). Mobile is a bit smaller so the
+  // stacked heading / Resume stay clear.
+  const lanyardScale = isMobile ? 1.28 : 1.45;
+  const camX = position[0];
+  const camY = position[1];
+  const camZ = position[2];
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -69,11 +89,18 @@ export default function Lanyard({
     <div className="lanyard-wrapper">
       <CanvasErrorBoundary>
       <Canvas
-        camera={{ position: position, fov: fov }}
+        camera={{ position: [camX, camY, camZ], fov: fov }}
         dpr={[1, isMobile ? 1.5 : 2]}
-        gl={{ alpha: transparent }}
+        gl={{
+          alpha: transparent,
+          // ACES lifts blacks and desaturates portraits. Custom photos skip it
+          // so headshot.png matches its file; the default card texture keeps ACES.
+          toneMapping: hasCustomImage ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
+          outputColorSpace: THREE.SRGBColorSpace
+        }}
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
       >
+        <CameraFramer x={camX} y={camY} z={camZ} fov={fov} />
         <ambientLight intensity={Math.PI} />
         <Physics paused={paused} gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
           <Band
@@ -83,6 +110,7 @@ export default function Lanyard({
             imageFit={imageFit}
             lanyardImage={lanyardImage}
             lanyardWidth={lanyardWidth}
+            lanyardScale={lanyardScale}
           />
         </Physics>
         <Environment blur={0.75}>
@@ -128,7 +156,8 @@ function Band({
   backImage = null,
   imageFit = 'cover',
   lanyardImage = null,
-  lanyardWidth = 1
+  lanyardWidth = 1,
+  lanyardScale = 1
 }) {
   const band = useRef(),
     fixed = useRef(),
@@ -201,6 +230,8 @@ function Band({
   const [dragged, drag] = useState(false);
   const [hovered, hover] = useState(false);
 
+  const S = lanyardScale;
+
   useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
@@ -261,10 +292,10 @@ function Band({
           <BallCollider args={[0.1]} />
         </RigidBody>
         <RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? 'kinematicPosition' : 'dynamic'}>
-          <CuboidCollider args={[0.8, 1.125, 0.01]} />
+          <CuboidCollider args={[0.8 * S, 1.125 * S, 0.01]} />
           <group
-            scale={2.25}
-            position={[0, -1.2, -0.05]}
+            scale={2.25 * S}
+            position={[0, -1.2 * S, -0.05]}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
             onPointerUp={e => (e.target.releasePointerCapture(e.pointerId), drag(false))}
@@ -274,14 +305,29 @@ function Band({
             )}
           >
             <mesh geometry={nodes.card.geometry}>
-              <meshPhysicalMaterial
-                map={cardMap}
-                map-anisotropy={16}
-                clearcoat={isMobile ? 0 : 1}
-                clearcoatRoughness={0.15}
-                roughness={0.9}
-                metalness={0.8}
-              />
+              {frontImage || backImage ? (
+                // Custom photos must stay unlit. meshPhysicalMaterial + IBL
+                // (metalness 0.8, clearcoat 1, Environment lightformers) treats
+                // the albedo as a metallic reflector and ACES-tone-maps it,
+                // which is what made headshot.png look faded/washed-out.
+                <meshBasicMaterial
+                  map={cardMap}
+                  map-anisotropy={16}
+                  transparent={false}
+                  opacity={1}
+                  toneMapped={false}
+                  envMap={null}
+                />
+              ) : (
+                <meshPhysicalMaterial
+                  map={cardMap}
+                  map-anisotropy={16}
+                  clearcoat={isMobile ? 0 : 1}
+                  clearcoatRoughness={0.15}
+                  roughness={0.9}
+                  metalness={0.8}
+                />
+              )}
             </mesh>
             <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
@@ -297,7 +343,7 @@ function Band({
           useMap
           map={texture}
           repeat={[-4, 1]}
-          lineWidth={lanyardWidth}
+          lineWidth={lanyardWidth * S}
         />
       </mesh>
     </>
