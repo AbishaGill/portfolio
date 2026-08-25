@@ -11,6 +11,15 @@
   justify-content: center;
   align-items: center;
   background-color: #000;
+  /* Never lock page scroll on the slot itself. A 72vh mobile hero slot with
+     touch-action:none ate every swipe after the preloader (empty black area
+     + missing canvas still captured the gesture). */
+  touch-action: auto;
+}
+
+/* While WebGL is still booting, let swipes pass through to the page. */
+.lanyard-wrapper:not(.gl-ready):not(.gl-failed) {
+  pointer-events: none;
 }
 
 /* R3F wraps <canvas> in its own div. Both that host and the canvas must be
@@ -26,18 +35,27 @@
   display: block;
 }
 
-/* The raw <canvas> drawing buffer is white until the first gl.clear.
-   Keep it out of the composite so only the CSS-black wrappers show. */
-.lanyard-wrapper:not(.gl-ready) canvas {
-  visibility: hidden !important;
-  opacity: 0 !important;
+/* Cover the raw WebGL buffer until the first cleared frame.
+   Do NOT hide the <canvas> with visibility/opacity — Android Chrome evicts
+   hidden WebGL contexts (contextlost → remount → gl-ready never sticks),
+   which left an empty slot that still captured touch. */
+.lanyard-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  z-index: 1;
 }
 
-/* Touch: stop the browser from stealing the gesture as a page scroll/pan.
-   Without this, touchmove never reaches R3F, pointer coords freeze, and the
-   card stays kinematic at its last point (stuck mid-swing on mobile only). */
-.lanyard-wrapper,
-.lanyard-wrapper canvas {
+.lanyard-wrapper.gl-ready::after,
+.lanyard-wrapper.gl-failed::after {
+  content: none;
+  display: none;
+}
+
+/* Card-drag only: opt the live canvas out of pan, not the wrapper. */
+.lanyard-wrapper.gl-ready canvas {
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;

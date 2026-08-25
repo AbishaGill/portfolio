@@ -29,20 +29,43 @@ function CameraFramer({ x, y, z, fov }) {
 // React's root touch listeners are passive, so preventDefault() in JSX
 // onTouchMove is ignored. A non-passive listener on the canvas keeps the
 // page from scrolling and stealing the drag (mobile-only freeze).
-function TouchGuard() {
+// Only attach after the canvas is revealed — otherwise the 72vh slot eats
+// every swipe while the card is still hidden / failed to init.
+function TouchGuard({ enabled = true }) {
   const gl = useThree(state => state.gl);
   useEffect(() => {
+    if (!enabled) return undefined;
     const el = gl.domElement;
     el.style.touchAction = 'none';
     const preventScroll = event => event.preventDefault();
     el.addEventListener('touchstart', preventScroll, { passive: false });
     el.addEventListener('touchmove', preventScroll, { passive: false });
     return () => {
+      el.style.touchAction = '';
       el.removeEventListener('touchstart', preventScroll);
       el.removeEventListener('touchmove', preventScroll);
     };
-  }, [gl]);
+  }, [gl, enabled]);
   return null;
+}
+
+function LanyardFallback({ src }) {
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      style={{
+        height: '70%',
+        maxHeight: '22rem',
+        width: 'auto',
+        objectFit: 'cover',
+        pointerEvents: 'none',
+        userSelect: 'none'
+      }}
+    />
+  );
 }
 
 // 1x1 transparent pixel — lets useTexture be called unconditionally when a
@@ -100,6 +123,9 @@ class CanvasErrorBoundary extends Component {
   }
   static getDerivedStateFromError() {
     return { hasError: true };
+  }
+  componentDidCatch(error) {
+    this.props.onError?.(error);
   }
   componentDidUpdate(prevProps) {
     if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
@@ -200,8 +226,8 @@ export default function Lanyard({
   const [contextEpoch, setContextEpoch] = useState(0);
   const bumpContext = useRef(() => setContextEpoch(n => n + 1));
   const wrapRef = useRef(null);
-  const [slotReady, setSlotReady] = useState(true);
   const [glReady, setGlReady] = useState(false);
+  const [glFailed, setGlFailed] = useState(false);
   const hasCustomImage = Boolean(frontImage || backImage);
   // World-space uniform scale so string + card grow together. Camera/FOV stay
   // at the caller values (no clip-from-zoom). Mobile is a bit smaller so the
@@ -213,36 +239,41 @@ export default function Lanyard({
   const canvasKey = `${isMobile ? 'm' : 'd'}-${contextEpoch}`;
 
   useEffect(() => {
-    const el = wrapRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(entries => {
-      const { width, height } = entries[0]?.contentRect ?? {};
-      setSlotReady(width > 2 && height > 2);
-    });
-    ro.observe(el);
-    setSlotReady(el.clientWidth > 2 && el.clientHeight > 2);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
     setGlReady(false);
+    setGlFailed(false);
   }, [canvasKey]);
+
+  // If onCreated / rAF never runs (hidden-canvas context loss on Android),
+  // still drop the black cover so the slot cannot stay empty forever.
+  useEffect(() => {
+    if (glReady || glFailed) return undefined;
+    const id = window.setTimeout(() => setGlReady(true), 800);
+    return () => window.clearTimeout(id);
+  }, [glReady, glFailed, canvasKey]);
+
+  const wrapperClass = `lanyard-wrapper${glReady ? ' gl-ready' : ''}${glFailed ? ' gl-failed' : ''}`;
 
   return (
     <div
-      className={`lanyard-wrapper${glReady ? ' gl-ready' : ''}`}
+      className={wrapperClass}
       ref={wrapRef}
       style={{ backgroundColor: '#000' }}
     >
-      <CanvasErrorBoundary resetKey={canvasKey}>
-      {slotReady && (
+      <CanvasErrorBoundary
+        resetKey={canvasKey}
+        onError={() => setGlFailed(true)}
+        fallback={<LanyardFallback src={frontImage} />}
+      >
+      {glFailed ? (
+        <LanyardFallback src={frontImage} />
+      ) : (
       <Canvas
         key={canvasKey}
         camera={{ position: [camX, camY, camZ], fov: fov }}
         dpr={[1, 2]}
         resize={{ scroll: false, debounce: 0 }}
         style={{
-          touchAction: 'none',
+          touchAction: glReady ? 'none' : 'auto',
           width: '100%',
           height: '100%',
           backgroundColor: '#000'
@@ -273,7 +304,7 @@ export default function Lanyard({
       >
         <CanvasResizer onContextLost={bumpContext.current} />
         <CameraFramer x={camX} y={camY} z={camZ} fov={fov} />
-        <TouchGuard />
+        <TouchGuard enabled={glReady} />
         <ambientLight intensity={Math.PI} />
         {/* Band suspends on GLB/texture load. Keep that work off-screen so the
             white untextured card never paints; the canvas stays black. */}
