@@ -21,3 +21,14 @@
 .lanyard-wrapper canvas {
   background-color: var(--page-bg, black);
 }
+
+/* Touch: stop the browser from stealing the gesture as a page scroll/pan.
+   Without this, touchmove never reaches R3F, pointer coords freeze, and the
+   card stays kinematic at its last point (stuck mid-swing on mobile only). */
+.lanyard-wrapper,
+.lanyard-wrapper canvas {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
