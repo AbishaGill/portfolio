@@ -115,12 +115,12 @@ const Hero = ({ lanyardPaused = false }) => {
               up into the Resume button). md:-mt-32 keeps the desktop/tablet
               upward offset unchanged. */}
           <motion.div
-            className="mt-0 w-full md:-mt-32 md:order-2 md:w-1/2"
+            className="mt-0 w-full bg-black md:-mt-32 md:order-2 md:w-1/2"
             initial="hidden"
             animate="visible"
             variants={imageVariants}
           >
-            <div className="h-[clamp(22rem,72vh,36rem)] w-full overflow-hidden md:h-[clamp(28rem,80vh,48rem)]">
+            <div className="h-[clamp(22rem,72vh,36rem)] w-full overflow-hidden bg-black md:h-[clamp(28rem,80vh,48rem)]">
               <Lanyard
                 position={[0, 0, 20]}
                 gravity={[0, -40, 0]}
