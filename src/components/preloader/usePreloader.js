@@ -44,14 +44,23 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     timers.current = [];
   }, []);
 
+  const unlockScroll = useCallback(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.classList.remove("preloader-active");
+  }, []);
+
   const finish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
     clearTimers();
+    // Unlock document scroll as soon as the intro is done — do not wait for
+    // unmount. Returning null while still mounted used to leave
+    // html.preloader-active (overflow:hidden) on mobile.
+    unlockScroll();
     setStage("done");
     setFinished(true);
     onFinishRef.current?.();
-  }, [clearTimers]);
+  }, [clearTimers, unlockScroll]);
 
   const handleCurtainComplete = finish;
 
@@ -95,10 +104,8 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
     document.documentElement.classList.add("preloader-active");
-    return () => {
-      document.documentElement.classList.remove("preloader-active");
-    };
-  }, []);
+    return unlockScroll;
+  }, [unlockScroll]);
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
