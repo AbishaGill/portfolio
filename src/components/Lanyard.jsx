@@ -26,26 +26,86 @@ function CameraFramer({ x, y, z, fov }) {
   return null;
 }
 
+// Shared with Band: only the visible card (plus clip/clamp) is a drag target.
+// Empty canvas around it must keep page scroll.
+const cardHitTarget = { current: null };
+const cardDragLock = { current: false };
+const CARD_HIT_MARGIN_PX = 16;
+
+function hitsCardMeshes(gl, camera, clientX, clientY) {
+  const root = cardHitTarget.current;
+  if (!root) return false;
+  const el = gl.domElement;
+  const rect = el.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return false;
+  const meshes = [];
+  root.traverse(obj => {
+    if (obj.isMesh) meshes.push(obj);
+  });
+  if (!meshes.length) return false;
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  const samples = [
+    [0, 0],
+    [CARD_HIT_MARGIN_PX, 0],
+    [-CARD_HIT_MARGIN_PX, 0],
+    [0, CARD_HIT_MARGIN_PX],
+    [0, -CARD_HIT_MARGIN_PX]
+  ];
+  for (const [dx, dy] of samples) {
+    ndc.x = ((clientX + dx - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -((clientY + dy - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    if (raycaster.intersectObjects(meshes, false).length > 0) return true;
+  }
+  return false;
+}
+
+function setCanvasPanY(el) {
+  if (el) el.style.touchAction = 'pan-y';
+}
+
+function setCanvasDragLock(el, locked) {
+  cardDragLock.current = locked;
+  if (el) el.style.touchAction = locked ? 'none' : 'pan-y';
+}
+
 // React's root touch listeners are passive, so preventDefault() in JSX
 // onTouchMove is ignored. A non-passive listener on the canvas keeps the
-// page from scrolling and stealing the drag (mobile-only freeze).
-// Only attach after the canvas is revealed — otherwise the 72vh slot eats
-// every swipe while the card is still hidden / failed to init.
+// page from scrolling and stealing a card drag.
+// Only lock the gesture when the touch starts on the card itself — the
+// 72vh canvas around it must stay pan-y so empty black space scrolls.
 function TouchGuard({ enabled = true }) {
   const gl = useThree(state => state.gl);
+  const camera = useThree(state => state.camera);
   useEffect(() => {
     if (!enabled) return undefined;
     const el = gl.domElement;
-    el.style.touchAction = 'none';
-    const preventScroll = event => event.preventDefault();
-    el.addEventListener('touchstart', preventScroll, { passive: false });
-    el.addEventListener('touchmove', preventScroll, { passive: false });
-    return () => {
-      el.style.touchAction = '';
-      el.removeEventListener('touchstart', preventScroll);
-      el.removeEventListener('touchmove', preventScroll);
+    setCanvasPanY(el);
+    const onTouchStart = event => {
+      const touch = event.changedTouches[0] || event.touches[0];
+      if (touch && hitsCardMeshes(gl, camera, touch.clientX, touch.clientY)) {
+        setCanvasDragLock(el, true);
+        event.preventDefault();
+      }
     };
-  }, [gl, enabled]);
+    const onTouchMove = event => {
+      if (cardDragLock.current) event.preventDefault();
+    };
+    const onTouchEnd = () => setCanvasDragLock(el, false);
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
+    return () => {
+      setCanvasPanY(el);
+      cardDragLock.current = false;
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [gl, camera, enabled]);
   return null;
 }
 
@@ -273,7 +333,7 @@ export default function Lanyard({
         dpr={[1, 2]}
         resize={{ scroll: false, debounce: 0 }}
         style={{
-          touchAction: glReady ? 'none' : 'auto',
+          touchAction: 'pan-y',
           width: '100%',
           height: '100%',
           backgroundColor: '#000'
@@ -463,6 +523,13 @@ function Band({
   ]);
 
   useEffect(() => {
+    return () => {
+      cardHitTarget.current = null;
+      cardDragLock.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (hovered) {
       document.body.style.cursor = dragged ? 'grabbing' : 'grab';
       return () => void (document.body.style.cursor = 'auto');
@@ -533,10 +600,14 @@ function Band({
           <group
             scale={2.25 * S}
             position={[0, -1.2 * S, -0.05]}
+            ref={node => {
+              cardHitTarget.current = node;
+            }}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
             onPointerDown={e => {
               e.stopPropagation();
+              setCanvasDragLock(gl.domElement, true);
               gl.domElement.setPointerCapture?.(e.pointerId);
               drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
             }}
@@ -544,10 +615,17 @@ function Band({
               if (gl.domElement.hasPointerCapture?.(e.pointerId)) {
                 gl.domElement.releasePointerCapture(e.pointerId);
               }
+              setCanvasDragLock(gl.domElement, false);
               drag(false);
             }}
-            onPointerCancel={() => drag(false)}
-            onLostPointerCapture={() => drag(false)}
+            onPointerCancel={() => {
+              setCanvasDragLock(gl.domElement, false);
+              drag(false);
+            }}
+            onLostPointerCapture={() => {
+              setCanvasDragLock(gl.domElement, false);
+              drag(false);
+            }}
           >
             <mesh geometry={nodes.card.geometry}>
               {frontImage || backImage ? (
