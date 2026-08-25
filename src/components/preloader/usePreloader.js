@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FINAL_HOLD } from "./constants";
+import { CURTAIN_FAILSAFE_MS, FINAL_HOLD, MAX_PRELOADER_MS } from "./constants";
 
 /**
  * Detects prefers-reduced-motion and keeps it live across changes.
@@ -20,27 +20,18 @@ export function usePrefersReducedMotion() {
 }
 
 /**
- * Owns the whole preloader lifecycle:
- *  - loading state + current word index (cycles the word array)
- *  - transition stage: "words" → "curtain" → "done"
- *  - finished flag + onFinish callback
- *  - all timers, cleaned up on unmount (no leaks)
- *
- * @param {object} opts
- * @param {string[]} opts.words
- * @param {number} opts.duration    per-word on-screen time (ms)
- * @param {() => void} [opts.onFinish]
- * @param {boolean} [opts.reduced]  prefers-reduced-motion active
+ * Owns the preloader lifecycle. Word advance is timer-driven (never waits on
+ * asset load or animation-complete). A hard max timeout always dismisses.
  */
 export function usePreloader({ words, duration, onFinish, reduced = false }) {
   const [index, setIndex] = useState(0);
-  const [stage, setStage] = useState("words"); // "words" | "curtain" | "done"
+  const [stage, setStage] = useState("words");
   const [finished, setFinished] = useState(false);
 
-  // Keep the collection of pending timeouts so we can clear every one on unmount.
   const timers = useRef([]);
   const onFinishRef = useRef(onFinish);
   onFinishRef.current = onFinish;
+  const finishedRef = useRef(false);
 
   const schedule = useCallback((fn, ms) => {
     const id = window.setTimeout(fn, ms);
@@ -48,52 +39,59 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     return id;
   }, []);
 
-  // Advance through the word list, then hand off to the curtain transition.
-  useEffect(() => {
-    if (stage !== "words") return undefined;
-    if (index >= words.length - 1) {
-      // Last word shown — brief hold (FINAL_HOLD), then start the liquid-sheet
-      // curtain. Uses a short buffer, NOT the 3s word-to-word `duration`, so the
-      // reveal flows in almost immediately with no idle stall.
-      schedule(() => setStage("curtain"), FINAL_HOLD);
-      return undefined;
-    }
-    schedule(() => setIndex((i) => i + 1), duration);
-    return undefined;
-  }, [index, stage, words.length, duration, schedule]);
+  const clearTimers = useCallback(() => {
+    timers.current.forEach((id) => window.clearTimeout(id));
+    timers.current = [];
+  }, []);
 
-  // Single guarded finish path — used by both the normal curtain completion
-  // and the fail-safe below, so onFinish can never fire twice.
-  const finishedRef = useRef(false);
   const finish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
+    clearTimers();
     setStage("done");
     setFinished(true);
     onFinishRef.current?.();
-  }, []);
+  }, [clearTimers]);
 
-  // Curtain choreography total ~1.5s (skipped for reduced motion → fast fade).
   const handleCurtainComplete = finish;
 
-  // FAIL-SAFE: the preloader must never hide the site indefinitely. Its word
-  // advance depends on animation-completion callbacks (AnimatePresence
-  // mode="wait" waits for each exit to finish); if a low-end device stalls that
-  // chain (main-thread contention, throttled rAF, etc.), the overlay would sit
-  // on the first word forever. Force-finish after the worst-case expected run
-  // time plus a generous margin — a no-op whenever the normal flow completes.
+  // Single timeline for the word list — one timeout chain, cleaned on unmount
+  // or when we leave the words stage. Reduced motion: one short beat, then out.
   useEffect(() => {
-    const perWord = duration + 1200; // hold + enter ~550 + exit ~450 + overhead
-    const curtain = 1500;
-    const margin = 5000;
-    const total = words.length * perWord + FINAL_HOLD + curtain + margin;
-    schedule(finish, total);
-  }, [words.length, duration, schedule, finish]);
+    if (stage !== "words") return undefined;
 
-  // Lock scroll AND hide the scrollbar track while the overlay is active.
-  // Uses a class (styles in index.css) so we can suppress the webkit + Firefox
-  // scrollbar, not just the scroll position. Always removed on unmount so the
-  // landing page's scrollbar and scrolling are fully restored.
+    if (reduced) {
+      const id = schedule(() => setStage("curtain"), 400);
+      return () => window.clearTimeout(id);
+    }
+
+    const ids = [];
+    let acc = 0;
+    for (let i = 0; i < words.length - 1; i += 1) {
+      acc += duration;
+      ids.push(schedule(() => setIndex(i + 1), acc));
+    }
+    ids.push(schedule(() => setStage("curtain"), acc + FINAL_HOLD));
+
+    return () => {
+      ids.forEach((id) => window.clearTimeout(id));
+    };
+  }, [stage, words, duration, reduced, schedule]);
+
+  // Curtain must not wait forever on onAnimationComplete (often missed if the
+  // SVG path animation is interrupted or the viewport reports 0×0).
+  useEffect(() => {
+    if (stage !== "curtain") return undefined;
+    const id = schedule(finish, CURTAIN_FAILSAFE_MS);
+    return () => window.clearTimeout(id);
+  }, [stage, schedule, finish]);
+
+  // Absolute cap — never block the site past MAX_PRELOADER_MS.
+  useEffect(() => {
+    const id = schedule(finish, MAX_PRELOADER_MS);
+    return () => window.clearTimeout(id);
+  }, [schedule, finish]);
+
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
     document.documentElement.classList.add("preloader-active");
@@ -102,13 +100,7 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     };
   }, []);
 
-  // Clear every outstanding timer when the hook unmounts.
-  useEffect(() => {
-    return () => {
-      timers.current.forEach((id) => window.clearTimeout(id));
-      timers.current = [];
-    };
-  }, []);
+  useEffect(() => () => clearTimers(), [clearTimers]);
 
   return { index, stage, finished, handleCurtainComplete, reduced };
 }

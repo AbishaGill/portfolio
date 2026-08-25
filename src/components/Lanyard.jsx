@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 'use client';
-import { Component, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, extend, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
 import { BallCollider, CuboidCollider, Physics, RigidBody, useRopeJoint, useSphericalJoint } from '@react-three/rapier';
@@ -91,6 +91,8 @@ function blitHighQuality(ctx, img, dx, dy, dw, dh) {
 
 // Keeps a texture/WebGL failure inside the Canvas from unmounting the whole
 // React root (drei's useTexture throws synchronously on a 404 image path).
+// resetKey remounts after a live viewport change so a DevTools device-mode
+// switch cannot leave this stuck on a blank fallback.
 class CanvasErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -99,10 +101,84 @@ class CanvasErrorBoundary extends Component {
   static getDerivedStateFromError() {
     return { hasError: true };
   }
+  componentDidUpdate(prevProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
+  }
   render() {
     if (this.state.hasError) return this.props.fallback ?? null;
     return this.props.children;
   }
+}
+
+function useIsMobile(breakpoint = 768) {
+  const query = `(max-width: ${breakpoint - 1}px)`;
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    window.addEventListener('resize', sync);
+    window.visualViewport?.addEventListener('resize', sync);
+    return () => {
+      mq.removeEventListener('change', sync);
+      window.removeEventListener('resize', sync);
+      window.visualViewport?.removeEventListener('resize', sync);
+    };
+  }, [query]);
+
+  return isMobile;
+}
+
+// DevTools device-mode and flex reflow can briefly report 0×0 or lose the
+// WebGL context. Keep the camera/backing store in sync, and ask the parent
+// to remount if the context dies.
+function CanvasResizer({ onContextLost }) {
+  const { gl, camera, invalidate } = useThree();
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const apply = () => {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (w < 2 || h < 2) return;
+      const pr = Math.min(window.devicePixelRatio || 1, 2);
+      gl.setPixelRatio(pr);
+      gl.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      invalidate();
+    };
+
+    apply();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null;
+    ro?.observe(canvas);
+    window.addEventListener('resize', apply);
+    window.visualViewport?.addEventListener('resize', apply);
+
+    const onLost = event => {
+      event.preventDefault();
+      onContextLost?.();
+    };
+    const onRestored = () => apply();
+    canvas.addEventListener('webglcontextlost', onLost);
+    canvas.addEventListener('webglcontextrestored', onRestored);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', apply);
+      window.visualViewport?.removeEventListener('resize', apply);
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
+    };
+  }, [gl, camera, invalidate, onContextLost]);
+
+  return null;
 }
 
 export default function Lanyard({
@@ -120,7 +196,12 @@ export default function Lanyard({
   // standalone usage animates immediately as before.
   paused = false
 }) {
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const isMobile = useIsMobile(768);
+  const [contextEpoch, setContextEpoch] = useState(0);
+  const bumpContext = useRef(() => setContextEpoch(n => n + 1));
+  const wrapRef = useRef(null);
+  const [slotReady, setSlotReady] = useState(true);
+  const [glReady, setGlReady] = useState(false);
   const hasCustomImage = Boolean(frontImage || backImage);
   // World-space uniform scale so string + card grow together. Camera/FOV stay
   // at the caller values (no clip-from-zoom). Mobile is a bit smaller so the
@@ -129,32 +210,74 @@ export default function Lanyard({
   const camX = position[0];
   const camY = position[1];
   const camZ = position[2];
+  const canvasKey = `${isMobile ? 'm' : 'd'}-${contextEpoch}`;
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0]?.contentRect ?? {};
+      setSlotReady(width > 2 && height > 2);
+    });
+    ro.observe(el);
+    setSlotReady(el.clientWidth > 2 && el.clientHeight > 2);
+    return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    setGlReady(false);
+  }, [canvasKey]);
+
   return (
-    <div className="lanyard-wrapper">
-      <CanvasErrorBoundary>
+    <div
+      className={`lanyard-wrapper${glReady ? ' gl-ready' : ''}`}
+      ref={wrapRef}
+      style={{ backgroundColor: '#000' }}
+    >
+      <CanvasErrorBoundary resetKey={canvasKey}>
+      {slotReady && (
       <Canvas
+        key={canvasKey}
         camera={{ position: [camX, camY, camZ], fov: fov }}
         dpr={[1, 2]}
-        style={{ touchAction: 'none' }}
+        resize={{ scroll: false, debounce: 0 }}
+        style={{
+          touchAction: 'none',
+          width: '100%',
+          height: '100%',
+          backgroundColor: '#000'
+        }}
         gl={{
-          alpha: transparent,
+          // Transparent buffer so the CSS-black wrapper shows through the
+          // 1–2 frames before setClearColor. alpha:false painted the UA's
+          // default white bitmap over the whole hero slot (see reload flash).
+          alpha: true,
+          antialias: true,
+          premultipliedAlpha: true,
           // ACES lifts blacks and desaturates portraits. Custom photos skip it
           // so headshot.png matches its file; the default card texture keeps ACES.
           toneMapping: hasCustomImage ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping,
           outputColorSpace: THREE.SRGBColorSpace
         }}
-        onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
+        onCreated={({ gl, scene }) => {
+          gl.setClearColor(0x000000, 1);
+          gl.clear();
+          scene.background = new THREE.Color(0x000000);
+          // Wait two painted frames so the cleared buffer, not the UA white
+          // default, is what becomes visible.
+          requestAnimationFrame(() => {
+            gl.clear();
+            requestAnimationFrame(() => setGlReady(true));
+          });
+        }}
       >
+        <CanvasResizer onContextLost={bumpContext.current} />
         <CameraFramer x={camX} y={camY} z={camZ} fov={fov} />
         <TouchGuard />
         <ambientLight intensity={Math.PI} />
+        {/* Band suspends on GLB/texture load. Keep that work off-screen so the
+            white untextured card never paints; the canvas stays black. */}
+        <Suspense fallback={null}>
         <Physics paused={paused} gravity={gravity} timeStep={1 / 60}>
           <Band
             isMobile={isMobile}
@@ -196,7 +319,9 @@ export default function Lanyard({
             scale={[100, 10, 1]}
           />
         </Environment>
+        </Suspense>
       </Canvas>
+      )}
       </CanvasErrorBoundary>
     </div>
   );

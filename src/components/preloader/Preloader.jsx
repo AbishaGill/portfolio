@@ -57,43 +57,55 @@ const Preloader = ({
       style={{
         position: "fixed",
         inset: 0,
-        width: "100vw",
-        height: "100vh",
+        width: "100%",
+        height: "100%",
         zIndex: 99999,
         overflow: "hidden",
         backgroundColor: showCurtain ? "transparent" : backgroundColor,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        pointerEvents: showCurtain ? "none" : "auto",
       }}
       aria-hidden={finished}
       role="presentation"
     >
-      {/* Word stage: mode="wait" makes the exiting word fully complete its exit
-          before the next enters — one legible word at a time, no blurred ghost
-          overlap. Still animated, not an abrupt cut. */}
-      {showWords && (
-        <AnimatePresence mode="wait">
-          <AnimatedWord
-            key={index}
-            word={words[index]}
-            textColor={textColor}
-            fontFamily={fontFamily}
-            fontWeight={fontWeight}
-            fontSize={fontSize}
-            reduced={reduced}
-          />
-        </AnimatePresence>
-      )}
+      {/* Overlapping enter/exit (not mode="wait") so letter stagger can finish
+          without blocking the next greeting — wait-mode was a freeze source. */}
+      <AnimatePresence>
+        {showWords && (
+          <motion.div
+            key="words"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.55, 0, 1, 0.35] }}
+            style={{
+              position: "absolute",
+              inset: 0,
+            }}
+          >
+            <AnimatePresence>
+              <AnimatedWord
+                key={words[index]}
+                word={words[index]}
+                textColor={textColor}
+                fontFamily={fontFamily}
+                fontWeight={fontWeight}
+                fontSize={fontSize}
+                reduced={reduced}
+              />
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Final exit. Reduced motion → fast fade; otherwise the liquid sheet. */}
       {showCurtain &&
         (reduced ? (
           <motion.div
             style={{ position: "absolute", inset: 0, backgroundColor }}
             initial={{ opacity: 1 }}
             animate={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             onAnimationComplete={handleCurtainComplete}
           />
         ) : (

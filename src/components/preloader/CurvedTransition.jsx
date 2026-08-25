@@ -1,49 +1,64 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { EASE_CURTAIN } from "./constants";
+import { CURTAIN_FAILSAFE_MS, CURTAIN_MIN_MS, EASE_CURTAIN } from "./constants";
 
-/**
- * Reads live viewport size so the SVG path scales to any screen
- * (mobile / tablet / desktop / ultrawide).
- */
+function measureViewport() {
+  if (typeof window === "undefined") return { w: 390, h: 844 };
+  const vv = window.visualViewport;
+  const w = vv?.width || window.innerWidth || document.documentElement?.clientWidth || 390;
+  const h = vv?.height || window.innerHeight || document.documentElement?.clientHeight || 844;
+  return { w: Math.max(1, Math.round(w)), h: Math.max(1, Math.round(h)) };
+}
+
 function useViewport() {
-  // Measure synchronously on first render so the sheet paints fully covering the
-  // screen immediately — a useEffect-only measure would leave a blank first frame.
-  const [size, setSize] = useState(() =>
-    typeof window === "undefined"
-      ? { w: 0, h: 0 }
-      : { w: window.innerWidth, h: window.innerHeight }
-  );
+  const [size, setSize] = useState(measureViewport);
   useEffect(() => {
-    const read = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    const read = () => setSize(measureViewport());
     read();
     window.addEventListener("resize", read);
-    return () => window.removeEventListener("resize", read);
+    window.visualViewport?.addEventListener("resize", read);
+    return () => {
+      window.removeEventListener("resize", read);
+      window.visualViewport?.removeEventListener("resize", read);
+    };
   }, []);
   return size;
 }
 
-// Build an SVG path for the sheet: a full-height rect whose BOTTOM edge is a
-// quadratic curve bulging `curve` px below the flat baseline at height `h`.
 const buildPath = (w, h, curve) =>
   `M0 0 L${w} 0 L${w} ${h} Q${w / 2} ${h + curve} 0 ${h} Z`;
 
 /**
- * "Liquid sheet" final exit — an SVG curved mask, not a fade.
- *  Phase 1 (0.4s): curve expands (flat bottom → deep bulge).
- *  Phase 2 (1.1s): the whole sheet slides up off-screen.
- *  Phase 3: curve relaxes flat as it clears the top (~1.5s total).
- *
- * Reduced motion: parent renders a plain fade instead of this component.
+ * Liquid-sheet exit. Always completes — onAnimationComplete plus a timeout —
+ * so a missed Framer callback cannot pin the overlay.
  */
 const CurvedTransition = ({ backgroundColor, curveHeight, onComplete }) => {
-  const { w, h } = useViewport();
-  if (!w || !h) return null;
+  const { w: width, h: height } = useViewport();
+  const startedAt = useRef(
+    typeof performance !== "undefined" ? performance.now() : Date.now(),
+  );
+  const settled = useRef(false);
 
-  const flat = buildPath(w, h, 0);
-  const bulged = buildPath(w, h, curveHeight);
-  // Relaxed shape used while sliding away — slight residual curve reads as liquid.
-  const relaxed = buildPath(w, h, curveHeight * 0.35);
+  const settle = useCallback(() => {
+    if (settled.current) return;
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now - startedAt.current < CURTAIN_MIN_MS) return;
+    settled.current = true;
+    onComplete?.();
+  }, [onComplete]);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      if (settled.current) return;
+      settled.current = true;
+      onComplete?.();
+    }, CURTAIN_FAILSAFE_MS);
+    return () => window.clearTimeout(id);
+  }, [onComplete]);
+
+  const flat = buildPath(width, height, 0);
+  const bulged = buildPath(width, height, curveHeight);
+  const relaxed = buildPath(width, height, curveHeight * 0.35);
 
   return (
     <motion.div
@@ -54,25 +69,23 @@ const CurvedTransition = ({ backgroundColor, curveHeight, onComplete }) => {
         pointerEvents: "none",
         willChange: "transform",
       }}
-      // Phase 2 + 3: slide the sheet up past its own curved bottom.
       initial={{ y: 0 }}
-      animate={{ y: -(h + curveHeight) }}
-      transition={{ duration: 1.1, ease: EASE_CURTAIN, delay: 0.4 }}
-      onAnimationComplete={onComplete}
+      animate={{ y: -(height + curveHeight) }}
+      transition={{ duration: 0.68, ease: EASE_CURTAIN, delay: 0.16 }}
+      onAnimationComplete={settle}
     >
       <svg
-        width={w}
-        height={h + curveHeight}
-        viewBox={`0 0 ${w} ${h + curveHeight}`}
+        width={width}
+        height={height + curveHeight}
+        viewBox={`0 0 ${width} ${height + curveHeight}`}
         preserveAspectRatio="none"
         style={{ display: "block" }}
       >
         <motion.path
           fill={backgroundColor}
           initial={{ d: flat }}
-          // Phase 1: expand curve, then Phase 3: relax it as it exits.
           animate={{ d: [flat, bulged, relaxed] }}
-          transition={{ duration: 1.5, ease: EASE_CURTAIN, times: [0, 0.27, 1] }}
+          transition={{ duration: 0.94, ease: EASE_CURTAIN, times: [0, 0.28, 1] }}
         />
       </svg>
     </motion.div>

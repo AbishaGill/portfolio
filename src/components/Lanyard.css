@@ -10,16 +10,27 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Paint the page background immediately so there's no white flash before the
-     WebGL context initializes and sets its (transparent) clear color. Uses the
-     shared --page-bg token so it tracks the page theme instead of hardcoding. */
-  background-color: var(--page-bg, black);
+  background-color: #000;
 }
 
-/* The raw <canvas> can show a white default frame before the WebGL context is
-   ready; keep it on the page background until Three.js takes over. */
+/* R3F wraps <canvas> in its own div. Both that host and the canvas must be
+   dark in CSS — WebGL clear color cannot paint until JS runs. */
+.lanyard-wrapper > div,
 .lanyard-wrapper canvas {
-  background-color: var(--page-bg, black);
+  background-color: #000 !important;
+}
+
+.lanyard-wrapper canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The raw <canvas> drawing buffer is white until the first gl.clear.
+   Keep it out of the composite so only the CSS-black wrappers show. */
+.lanyard-wrapper:not(.gl-ready) canvas {
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
 /* Touch: stop the browser from stealing the gesture as a page scroll/pan.
