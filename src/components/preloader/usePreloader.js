@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CURTAIN_FAILSAFE_MS, FINAL_HOLD, MAX_PRELOADER_MS } from "./constants";
+import { EXIT_MS, EXIT_MS_REDUCED, FINAL_HOLD, MAX_PRELOADER_MS } from "./constants";
 
 /**
  * Detects prefers-reduced-motion and keeps it live across changes.
@@ -23,7 +23,7 @@ export function usePrefersReducedMotion() {
  * Owns the preloader lifecycle. Word advance is timer-driven (never waits on
  * asset load or animation-complete). A hard max timeout always dismisses.
  */
-export function usePreloader({ words, duration, onFinish, reduced = false }) {
+export function usePreloader({ words, duration, onFinish, onReveal, reduced = false }) {
   const [index, setIndex] = useState(0);
   const [stage, setStage] = useState("words");
   const [finished, setFinished] = useState(false);
@@ -31,7 +31,10 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
   const timers = useRef([]);
   const onFinishRef = useRef(onFinish);
   onFinishRef.current = onFinish;
+  const onRevealRef = useRef(onReveal);
+  onRevealRef.current = onReveal;
   const finishedRef = useRef(false);
+  const revealedRef = useRef(false);
 
   const schedule = useCallback((fn, ms) => {
     const id = window.setTimeout(fn, ms);
@@ -49,6 +52,12 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     document.documentElement.classList.remove("preloader-active");
   }, []);
 
+  const reveal = useCallback(() => {
+    if (revealedRef.current) return;
+    revealedRef.current = true;
+    onRevealRef.current?.();
+  }, []);
+
   const finish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
@@ -57,12 +66,11 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     // unmount. Returning null while still mounted used to leave
     // html.preloader-active (overflow:hidden) on mobile.
     unlockScroll();
+    reveal();
     setStage("done");
     setFinished(true);
     onFinishRef.current?.();
-  }, [clearTimers, unlockScroll]);
-
-  const handleCurtainComplete = finish;
+  }, [clearTimers, unlockScroll, reveal]);
 
   // Single timeline for the word list — one timeout chain, cleaned on unmount
   // or when we leave the words stage. Reduced motion: one short beat, then out.
@@ -70,7 +78,7 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
     if (stage !== "words") return undefined;
 
     if (reduced) {
-      const id = schedule(() => setStage("curtain"), 400);
+      const id = schedule(() => setStage("exit"), 400);
       return () => window.clearTimeout(id);
     }
 
@@ -80,20 +88,21 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
       acc += duration;
       ids.push(schedule(() => setIndex(i + 1), acc));
     }
-    ids.push(schedule(() => setStage("curtain"), acc + FINAL_HOLD));
+    ids.push(schedule(() => setStage("exit"), acc + FINAL_HOLD));
 
     return () => {
       ids.forEach((id) => window.clearTimeout(id));
     };
   }, [stage, words, duration, reduced, schedule]);
 
-  // Curtain must not wait forever on onAnimationComplete (often missed if the
-  // SVG path animation is interrupted or the viewport reports 0×0).
+  // Exit is timer-only. Slide/fade play in the UI; we never wait on
+  // onAnimationComplete (that callback is a hang source).
   useEffect(() => {
-    if (stage !== "curtain") return undefined;
-    const id = schedule(finish, CURTAIN_FAILSAFE_MS);
+    if (stage !== "exit") return undefined;
+    reveal();
+    const id = schedule(finish, reduced ? EXIT_MS_REDUCED : EXIT_MS);
     return () => window.clearTimeout(id);
-  }, [stage, schedule, finish]);
+  }, [stage, reduced, schedule, finish, reveal]);
 
   // Absolute cap — never block the site past MAX_PRELOADER_MS.
   useEffect(() => {
@@ -109,5 +118,5 @@ export function usePreloader({ words, duration, onFinish, reduced = false }) {
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
-  return { index, stage, finished, handleCurtainComplete, reduced };
+  return { index, stage, finished, reduced };
 }

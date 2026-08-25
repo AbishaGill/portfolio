@@ -1,14 +1,13 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AnimatedWord from "./AnimatedWord";
-import CurvedTransition from "./CurvedTransition";
 import { usePreloader, usePrefersReducedMotion } from "./usePreloader";
-import { DEFAULTS, DEFAULT_WORDS } from "./constants";
+import { DEFAULTS, DEFAULT_WORDS, EASE_OUT, EXIT_MS, EXIT_MS_REDUCED } from "./constants";
 
 /**
  * Premium fullscreen typography preloader.
  * Cycles a word list with cinematic blur/scale/translate transitions, then
- * reveals the underlying app with an SVG "liquid sheet" curved mask.
+ * slides the whole overlay upward while the site fades in underneath.
  *
  * Additive & self-contained — mount once at app root (see App.jsx wiring).
  *
@@ -20,7 +19,7 @@ import { DEFAULTS, DEFAULT_WORDS } from "./constants";
  *   fontFamily      string
  *   fontWeight      number|string
  *   fontSize        string    CSS size (responsive clamp by default)
- *   curveHeight     number    depth of the liquid-sheet curve in px
+ *   onReveal        () => void called when the exit slide starts (site fade)
  *   onFinish        () => void called once the reveal completes
  */
 const Preloader = ({
@@ -31,13 +30,14 @@ const Preloader = ({
   fontFamily = DEFAULTS.fontFamily,
   fontWeight = DEFAULTS.fontWeight,
   fontSize = DEFAULTS.fontSize,
-  curveHeight = DEFAULTS.curveHeight,
+  onReveal,
   onFinish,
 }) => {
   const reduced = usePrefersReducedMotion();
-  const { index, stage, finished, handleCurtainComplete } = usePreloader({
+  const { index, stage, finished } = usePreloader({
     words,
     duration,
+    onReveal,
     onFinish,
     reduced,
   });
@@ -46,14 +46,22 @@ const Preloader = ({
   if (finished) return null;
 
   const showWords = stage === "words";
-  const showCurtain = stage === "curtain";
+  const exiting = stage === "exit";
+  const exitSec = (reduced ? EXIT_MS_REDUCED : EXIT_MS) / 1000;
 
   return (
-    <div
+    <motion.div
       // fixed fullscreen overlay, very high z-index, clipped.
-      // Opaque while words play (hides the app); TRANSPARENT during the curtain
-      // so the sliding liquid-sheet reveals the landing page underneath instead
-      // of the overlay's own background (which caused the blank white pause).
+      // Stays opaque so the site is revealed by the slide, not a hard swap.
+      initial={false}
+      animate={
+        exiting
+          ? reduced
+            ? { y: 0, opacity: 0 }
+            : { y: "-100%", opacity: 1 }
+          : { y: 0, opacity: 1 }
+      }
+      transition={{ duration: exitSec, ease: EASE_OUT }}
       style={{
         position: "fixed",
         inset: 0,
@@ -61,13 +69,14 @@ const Preloader = ({
         height: "100%",
         zIndex: 99999,
         overflow: "hidden",
-        backgroundColor: showCurtain ? "transparent" : backgroundColor,
+        backgroundColor,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        pointerEvents: showCurtain ? "none" : "auto",
+        pointerEvents: exiting ? "none" : "auto",
+        willChange: "transform, opacity",
       }}
-      aria-hidden={finished}
+      aria-hidden={finished || exiting}
       role="presentation"
     >
       {/* Overlapping enter/exit (not mode="wait") so letter stagger can finish
@@ -98,24 +107,7 @@ const Preloader = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {showCurtain &&
-        (reduced ? (
-          <motion.div
-            style={{ position: "absolute", inset: 0, backgroundColor }}
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onAnimationComplete={handleCurtainComplete}
-          />
-        ) : (
-          <CurvedTransition
-            backgroundColor={backgroundColor}
-            curveHeight={curveHeight}
-            onComplete={handleCurtainComplete}
-          />
-        ))}
-    </div>
+    </motion.div>
   );
 };
 

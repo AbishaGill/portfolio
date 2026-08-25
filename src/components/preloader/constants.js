@@ -14,15 +14,21 @@ export const EASE_OUT = [0.22, 1, 0.36, 1]; // expo-ish out — cinematic settle
 export const EASE_IN = [0.55, 0, 1, 0.35]; // quick, confident lift on exit
 export const EASE_CURTAIN = [0.77, 0, 0.18, 1]; // inOut-quint — liquid sheet
 
-// Last-word beat before the curtain. Short so the reveal does not idle.
+// Last-word beat before the overlay exit. Short so the reveal does not idle.
 export const FINAL_HOLD = 900;
 
-// Hard cap for the entire overlay (words + curtain). Always dismiss by this
-// time even if an animation callback never fires. Designed runtime is ~2.7s.
-export const MAX_PRELOADER_MS = 3500;
+// Overlay slide-up + site fade. Timer-driven — never waits on animationcomplete.
+export const EXIT_MS = 720;
+export const EXIT_MS_REDUCED = 200;
 
-// If the curtain stage itself stalls (onAnimationComplete missed), force-finish.
-export const CURTAIN_FAILSAFE_MS = 1000;
+// Hard cap for the entire overlay (words + exit). Always dismiss by this
+// time even if an animation callback never fires.
+// Words: 3×900 + 900 hold = 3600, then EXIT_MS. Slack so the cap cannot
+// cut the slide-up (the old 3500 cap fired before the reveal started).
+export const MAX_PRELOADER_MS = 3600 + EXIT_MS + 200;
+
+// If the exit stage itself stalls, force-finish (mirrors EXIT_MS).
+export const CURTAIN_FAILSAFE_MS = EXIT_MS;
 export const CURTAIN_MIN_MS = 780;
 
 export const DEFAULTS = {
