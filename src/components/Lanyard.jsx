@@ -26,6 +26,25 @@ function CameraFramer({ x, y, z, fov }) {
   return null;
 }
 
+// React's root touch listeners are passive, so preventDefault() in JSX
+// onTouchMove is ignored. A non-passive listener on the canvas keeps the
+// page from scrolling and stealing the drag (mobile-only freeze).
+function TouchGuard() {
+  const gl = useThree(state => state.gl);
+  useEffect(() => {
+    const el = gl.domElement;
+    el.style.touchAction = 'none';
+    const preventScroll = event => event.preventDefault();
+    el.addEventListener('touchstart', preventScroll, { passive: false });
+    el.addEventListener('touchmove', preventScroll, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', preventScroll);
+      el.removeEventListener('touchmove', preventScroll);
+    };
+  }, [gl]);
+  return null;
+}
+
 // 1x1 transparent pixel — lets useTexture be called unconditionally when a
 // front/back image isn't supplied.
 const BLANK_PIXEL =
@@ -37,6 +56,38 @@ const BLANK_PIXEL =
 // independently, aspect-preserving (no stretching).
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
+
+// Stepwise blit so a small source (e.g. 400² headshot) is not softened by a
+// single 3× canvas upscale, then another GPU mipmap pass.
+function blitHighQuality(ctx, img, dx, dy, dw, dh) {
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  const sw = img.width;
+  const sh = img.height;
+  if (dw <= sw && dh <= sh) {
+    ctx.drawImage(img, dx, dy, dw, dh);
+    return;
+  }
+  let src = img;
+  let cw = sw;
+  let ch = sh;
+  while (cw * 2 < dw || ch * 2 < dh) {
+    const nw = Math.min(dw, cw * 2);
+    const nh = Math.min(dh, ch * 2);
+    const step = document.createElement('canvas');
+    step.width = nw;
+    step.height = nh;
+    const stepCtx = step.getContext('2d');
+    if (!stepCtx) break;
+    stepCtx.imageSmoothingEnabled = true;
+    stepCtx.imageSmoothingQuality = 'high';
+    stepCtx.drawImage(src, 0, 0, nw, nh);
+    src = step;
+    cw = nw;
+    ch = nh;
+  }
+  ctx.drawImage(src, dx, dy, dw, dh);
+}
 
 // Keeps a texture/WebGL failure inside the Canvas from unmounting the whole
 // React root (drei's useTexture throws synchronously on a 404 image path).
@@ -90,7 +141,8 @@ export default function Lanyard({
       <CanvasErrorBoundary>
       <Canvas
         camera={{ position: [camX, camY, camZ], fov: fov }}
-        dpr={[1, isMobile ? 1.5 : 2]}
+        dpr={[1, 2]}
+        style={{ touchAction: 'none' }}
         gl={{
           alpha: transparent,
           // ACES lifts blacks and desaturates portraits. Custom photos skip it
@@ -101,8 +153,9 @@ export default function Lanyard({
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
       >
         <CameraFramer x={camX} y={camY} z={camZ} fov={fov} />
+        <TouchGuard />
         <ambientLight intensity={Math.PI} />
-        <Physics paused={paused} gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
+        <Physics paused={paused} gravity={gravity} timeStep={1 / 60}>
           <Band
             isMobile={isMobile}
             frontImage={frontImage}
@@ -169,7 +222,12 @@ function Band({
     ang = new THREE.Vector3(),
     rot = new THREE.Vector3(),
     dir = new THREE.Vector3();
-  const segmentProps = { type: 'dynamic', canSleep: true, colliders: false, angularDamping: 4, linearDamping: 4 };
+  // Sleeping mid-swing is a common mobile freeze (30–60ms steps + damping
+  // drop the body under the sleep threshold). Desktop still feels the same
+  // because wakeUp() already ran every drag frame; this only keeps the
+  // post-flick settle alive on touch devices.
+  const segmentProps = { type: 'dynamic', canSleep: !isMobile, colliders: false, angularDamping: 4, linearDamping: 4 };
+  const gl = useThree(state => state.gl);
   const { nodes, materials } = useGLTF(cardGLB);
   const texture = useTexture(lanyardImage || lanyard);
   // useTexture must be called unconditionally; use a blank pixel when an image
@@ -191,6 +249,8 @@ function Band({
     canvas.height = H;
     const ctx = canvas.getContext('2d');
     if (!ctx) return baseMap;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     // Keep the original baked atlas for the card edges and any untouched face.
     ctx.drawImage(baseImg, 0, 0, W, H);
 
@@ -209,7 +269,7 @@ function Band({
       ctx.beginPath();
       ctx.rect(rx, ry, rw, rh);
       ctx.clip();
-      ctx.drawImage(img, dx, dy, dw, dh);
+      blitHighQuality(ctx, img, dx, dy, dw, dh);
       ctx.restore();
     };
 
@@ -219,10 +279,16 @@ function Band({
     const composite = new THREE.CanvasTexture(canvas);
     composite.colorSpace = THREE.SRGBColorSpace;
     composite.flipY = baseMap.flipY;
-    composite.anisotropy = 16;
+    // Mipmaps + LinearMipmapLinearFilter make a canvas-upscaled portrait look
+    // soft (the card sits at an angle, so a lower mip is sampled). Keep the
+    // baked pixels and let the GPU do a single linear filter.
+    composite.generateMipmaps = false;
+    composite.minFilter = THREE.LinearFilter;
+    composite.magFilter = THREE.LinearFilter;
+    composite.anisotropy = gl.capabilities.getMaxAnisotropy();
     composite.needsUpdate = true;
     return composite;
-  }, [frontImage, backImage, imageFit, frontTex, backTex, materials.base.map]);
+  }, [frontImage, backImage, imageFit, frontTex, backTex, materials.base.map, gl]);
   const [curve] = useState(
     () =>
       new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()])
@@ -246,6 +312,21 @@ function Band({
       return () => void (document.body.style.cursor = 'auto');
     }
   }, [hovered, dragged]);
+
+  // Touch often fires pointercancel / drops capture when the UA starts a
+  // scroll. If we only listen for pointerup on the mesh, `dragged` stays
+  // truthy and the body is left kinematic (frozen). Window listeners are a
+  // no-op on a normal desktop mouse-up (onPointerUp already cleared it).
+  useEffect(() => {
+    if (!dragged) return;
+    const endDrag = () => drag(false);
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    return () => {
+      window.removeEventListener('pointerup', endDrag);
+      window.removeEventListener('pointercancel', endDrag);
+    };
+  }, [dragged]);
 
   useFrame((state, delta) => {
     if (dragged) {
@@ -298,11 +379,19 @@ function Band({
             position={[0, -1.2 * S, -0.05]}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
-            onPointerUp={e => (e.target.releasePointerCapture(e.pointerId), drag(false))}
-            onPointerDown={e => (
-              e.target.setPointerCapture(e.pointerId),
-              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())))
-            )}
+            onPointerDown={e => {
+              e.stopPropagation();
+              gl.domElement.setPointerCapture?.(e.pointerId);
+              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
+            }}
+            onPointerUp={e => {
+              if (gl.domElement.hasPointerCapture?.(e.pointerId)) {
+                gl.domElement.releasePointerCapture(e.pointerId);
+              }
+              drag(false);
+            }}
+            onPointerCancel={() => drag(false)}
+            onLostPointerCapture={() => drag(false)}
           >
             <mesh geometry={nodes.card.geometry}>
               {frontImage || backImage ? (
@@ -312,7 +401,7 @@ function Band({
                 // which is what made headshot.png look faded/washed-out.
                 <meshBasicMaterial
                   map={cardMap}
-                  map-anisotropy={16}
+                  map-anisotropy={cardMap.anisotropy}
                   transparent={false}
                   opacity={1}
                   toneMapped={false}
